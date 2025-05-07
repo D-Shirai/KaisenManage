@@ -1,0 +1,126 @@
+/* 全体のフォントを Meiryo UI に設定 */
+html, body {
+  font-family: "Meiryo UI", "メイリオ", sans-serif !important;
+}
+
+
+/* ヘッダー全体を相対位置に */
+.header-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ヘッダー画像 */
+.header-wrapper picture,
+.header-wrapper img {
+  display: block;
+  width: 100%;
+}
+
+/* デスクトップ用固定高さ */
+.header-img {
+  max-height: 150px;
+  object-fit: cover;
+}
+
+/* スマホでは高さを抑える */
+@media (max-width: 767px) {
+  .header-img {
+    max-height: 100px;
+  }
+}
+
+/* ハンバーガーボタンを右端・縦中央に固定 */
+.header-toggler {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  height: 80%;
+  width: auto;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+}
+
+/* ハンバーガーアイコン色 */
+.header-toggler .navbar-toggler-icon {
+  filter: none;
+  background-image: url("data:image/svg+xml;charset=utf8,\
+<svg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'>\
+<path stroke='%23025EB0' stroke-width='2' stroke-linecap='round' \
+stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/>\
+</svg>");
+}
+
+/* ------ 折りたたみメニュー全体 ------ */
+#mainNavbar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100vw;
+  padding: 0;
+  z-index: 1000;
+  background: linear-gradient(to right, #025EB0 0%, #ffffff 100%) !important;
+}
+
+/* 各メニュー項目を行ブロック化 */
+#mainNavbar .nav-item {
+  width: 100vw;
+  margin-bottom: 0.75rem !important;
+}
+#mainNavbar .nav-item:last-child {
+  margin-bottom: 1.5rem !important;
+}
+
+/* 共通リンクスタイル */
+#mainNavbar .nav-link,
+#mainNavbar .navbar-text {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  color: #003366 !important;
+  font-weight: bold;
+  background: transparent !important;
+  border-radius: 0.25rem;
+}
+
+/* ログイン中テキストだけホバー反転を無効化 */
+#mainNavbar .navbar-text:hover {
+  background: transparent !important;
+  color: #003366 !important;
+}
+
+/* ホバー時：リンク(.nav-link)だけに背景を適用 */
+#mainNavbar .nav-link:hover {
+  background: linear-gradient(to left, #025EB0 30%, #a9d7ff 100%) !important;
+  color: #ffffff !important;
+}
+
+/* ログアウトリンクは右端にテキスト寄せ */
+#mainNavbar .nav-item:last-child .nav-link {
+  text-align: right !important;
+}
+
+/* プライマリーボタンの色統一 */
+.btn-primary {
+  background-color: #025EB0;
+  border-color: #025EB0;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #024A99;
+  border-color: #024A99;
+}
+
+/* 写真アイコン（既存） */
+.photo-icon {
+  cursor: pointer !important;
+}
+
+/* すべてのテーブルヘッダーとセルを中央揃えに */
+table th,
+table td {
+  text-align: center !important;
+}
+

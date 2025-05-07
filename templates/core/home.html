@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}ホーム | 開栓管理システム{% endblock %}
+{% block content %}
+<div class="container my-5">
+  <h1>ホーム</h1>
+  <p>操作を選択してください。</p>
+  <a href="{% url 'core:project_create' %}" class="btn btn-success me-2">新規案件作成</a>
+  <a href="{% url 'core:project_list' %}" class="btn btn-primary">案件一覧</a>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>案件作成 確認</h2>
+
+<dl>
+  <dt>オーダーNo.:</dt>      <dd>{{ form_data.order_no|default:"（なし）" }}</dd>
+  <dt>案件名:</dt>          <dd>{{ form_data.name }}</dd>
+  <dt>アクセス許可ユーザー:</dt>
+    <dd>
+      {% for u in allowed_users %}
+        {{ u.code }} {{ u.get_full_name }}<br>
+      {% empty %}
+        （なし）
+      {% endfor %}
+    </dd>
+</dl>
+
+{% if customers %}
+  <h3>インポート顧客プレビュー</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>使用No.</th><th>氏名</th><th>部屋番号</th>
+        <th>メーター種別</th><th>メーター番号</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in customers %}
+      <tr>
+        <td>{{ c.usage_no }}</td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.room_number }}</td>
+        <td>{{ c.meter_type }}</td>
+        <td>{{ c.meter_number }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+<form method="post" class="text-center">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-success">確定して登録</button>
+  <a href="{% url 'core:project_create' %}" class="btn btn-secondary">戻る</a>
+</form>
+{% endblock %}

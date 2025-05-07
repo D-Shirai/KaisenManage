@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+
+
+{% block title %}案件詳細{% endblock %}
+
+
+
+{% block content %}
+
+<style>
+  .progress {
+    height: 20px;
+  }
+</style>
+
+<div class="container my-5">
+
+  {# ─── 見出し＋マップ表示ボタン ───────────────── #}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">{{ project.name }} </h2>
+    <a href="{% url 'core:project_map' project.pk %}"
+       class="btn btn-outline-primary">
+      マップ表示
+    </a>
+  </div>
+
+<!-- 開栓進捗サマリ -->
+<div class="mb-3">
+  <div class="small mb-1">
+    進捗：
+  </div>
+  <div class="progress" style="height: 20px;">
+    <div class="progress-bar bg-primary" style="width: {{ summary.pct }}%">
+      開栓完了（{{ summary.done }} / {{ summary.total }} 件, {{ summary.pct }}%）
+    </div>
+    <div class="progress-bar bg-light text-dark" style="width: {{ summary.not_pct }}%">
+      開栓未実施（{{ summary.not_done }} 件, {{ summary.not_pct }}%）
+    </div>
+  </div>
+</div>
+
+
+<!-- PR状況サマリ -->
+<div class="mb-3">
+  <div class="small mb-1">PR状況：</div>
+  <div class="progress" style="height: 20px;">
+    <div class="progress-bar bg-secondary" style="width: {{ pr_pct.未訪問 }}%">
+      未訪問（{{ pr_summary.未訪問 }}件, {{ pr_pct.未訪問 }}%）
+    </div>
+    <div class="progress-bar bg-success" style="width: {{ pr_pct.在宅 }}%">
+      在宅（{{ pr_summary.在宅 }}件, {{ pr_pct.在宅 }}%）
+    </div>
+    <div class="progress-bar bg-warning text-dark" style="width: {{ pr_pct.不在 }}%">
+      不在（{{ pr_summary.不在 }}件, {{ pr_pct.不在 }}%）
+    </div>
+  </div>
+</div>
+
+
+<br>
+
+  <!-- PC用表示 -->
+  <div class="d-none d-sm-block">
+
+    <!-- 検索＋棟番号除去＋保存ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+      <!-- 検索フォーム -->
+      <form method="get" class="d-flex align-items-center flex-grow-1 me-3">
+        <label for="room" class="form-label mb-0 me-2" style="white-space: nowrap;">部屋番号</label>
+        <input type="text" name="room" value="{{ room_q }}" class="form-control me-2" placeholder="例: *01" style="max-width: 200px;">
+        <button type="submit" class="btn btn-outline-secondary me-3">検索</button>
+
+
+        <div class="form-check mb-0 ms-auto">
+          <input type="checkbox"
+                 class="form-check-input"
+                 name="strip_tou"
+                 value="1"
+                 id="strip_tou"
+                 {% if strip_tou %}checked{% endif %}
+                 onchange="this.form.submit();">
+          <label for="strip_tou" class="form-check-label mb-0">棟番号除去</label>
+        </div>
+      </form>
+
+      <!-- 棟番号除去→上書きボタン -->
+      <form method="post" class="mb-0">
+        {% csrf_token %}
+        <input type="hidden" name="strip_tou_apply" value="1">
+        <button type="submit"
+                class="btn btn-outline-secondary"
+                onclick="return confirm('表示中の部屋番号から棟番号を削除して上書き保存します。よろしいですか？');">
+          棟番号除去→上書き
+        </button>
+      </form>
+    </div>
+
+    <!-- 一括更新フォーム -->
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+      <div class="row g-3 align-items-end">
+        <div class="col">{{ bulk_form.pr_status|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.gauge_spec|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.absence_action|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.open_status|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.open_round|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.leaflet_type|as_crispy_field }}</div>
+        <div class="col">{{ bulk_form.leaflet_status|as_crispy_field }}</div>
+        <div class="col-auto d-flex align-items-center">
+          <button type="submit" name="bulk_update" class="btn btn-primary">一括更新</button>
+        </div>
+      </div>
+
+      <!-- テーブル -->
+      <div class="table-responsive mt-3">
+        <table class="table table-sm table-striped text-center small">
+          <thead class="table-dark">
+            <tr>
+              <th><input type="checkbox" id="select-all"></th>
+              <th>No.</th>
+              <th>部屋番号</th>
+              <th>メーター番号</th>
+              <th>メーター種別</th>
+              <th>M栓状態</th>
+              <th>M取付外</th>
+              <th>PR状況</th>
+              <th>ゲージ仕様</th>
+              <th>不在時処置</th>
+              <th>開栓状況</th>
+              <th>開栓巡目</th>
+              <th>用紙種別</th>
+              <th>投函ステータス</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr>
+              <td><input type="checkbox" name="selected" value="{{ a.pk }}"></td>
+              <td>{{ a.sequence }}</td>
+              <td>
+                <a href="{% url 'core:assignment_detail' project.pk a.pk %}">
+                  {% if strip_tou %}
+                    {{ a.customer.room_number|strip_tou }}
+                  {% else %}
+                    {{ a.customer.room_number }}
+                  {% endif %}
+                </a>
+              </td>
+              <td>{{ a.meter_number }}</td>
+              <td>{{ a.meter_type }}</td>
+              <td>{{ a.m_valve_state }}</td>
+              <td>{{ a.m_valve_attach }}</td>
+              <td>{{ a.pr_status }}</td>
+              <td>{{ a.gauge_spec }}</td>
+              <td>{{ a.absence_action }}</td>
+              <td>{{ a.open_status }}</td>
+              <td>{{ a.open_round }}</td>
+              <td>{{ a.leaflet_type }}</td>
+              <td>{{ a.leaflet_status }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+  <!-- 案件削除 -->
+  <form method="post" action="{% url 'core:project_delete' project.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger"
+            onclick="return confirm('この案件を削除フォルダに移動しますか？（30日後に完全削除）');">
+      案件を削除
+    </button>
+  </form>
+
+  <!-- 案件完了 -->
+  <form method="post" action="{% url 'core:project_complete' project.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success"
+            onclick="return confirm('この案件を完了としてマークしますか？');">
+      案件を完了
+    </button>
+  </form>
+</div>
+
+
+  <!-- スマホ表示 -->
+  <div class="d-block d-sm-none">
+    <ul class="list-group">
+      {% for a in assignments %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ a.customer.room_number }}</span>
+        <a href="{% url 'core:assignment_detail' project.pk a.pk %}" class="btn btn-sm btn-outline-primary">編集</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+
+<!-- 一括チェック -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+      selectAll.addEventListener('change', function (e) {
+        document.querySelectorAll('input[name="selected"]').forEach(cb => cb.checked = e.target.checked);
+      });
+    }
+  });
+</script>
+{% endblock %}

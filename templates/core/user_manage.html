@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}ユーザー管理{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <!-- タイトル＋テンプレートDL -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>ユーザー管理</h2>
+    <a href="{% static 'excel_templates/ユーザー登録.xlsx' %}"
+       class="btn btn-outline-secondary"
+       download>
+      テンプレートダウンロード
+    </a>
+  </div>
+
+  <!-- インポートカード -->
+  <div class="card mb-4">
+    <div class="card-header">Excelから一括登録</div>
+    <div class="card-body">
+      <form method="post"
+            action="{% url 'core:user_manage' %}"
+            enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="{{ excel_form.excel_file.id_for_label }}"
+                 class="form-label">
+            {{ excel_form.excel_file.label }}
+          </label>
+          {{ excel_form.excel_file }}
+          {% for err in excel_form.excel_file.errors %}
+            <div class="text-danger">{{ err }}</div>
+          {% endfor %}
+        </div>
+
+        {% if excel_form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ excel_form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">
+          インポート
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- フィルタリング -->
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-auto">{{ filter_form.company|as_crispy_field }}</div>
+    <div class="col-auto">{{ filter_form.district|as_crispy_field }}</div>
+    <div class="col-auto">{{ filter_form.team|as_crispy_field }}</div>
+    <div class="col-auto">{{ filter_form.group|as_crispy_field }}</div>
+    <div class="col-auto">{{ filter_form.is_staff|as_crispy_field }}</div>
+    <div class="col-auto d-flex align-items-center">
+      <button type="submit" class="btn btn-primary">絞り込む</button>
+      <a href="{% url 'core:user_manage' %}" class="btn btn-secondary ms-2">クリア</a>
+    </div>
+  </form>
+
+  <!-- 一括削除フォーム -->
+  <form method="post" action="{% url 'core:user_manage' %}">
+    {% csrf_token %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">ユーザー一覧</h5>
+      <button type="submit" name="bulk_delete" class="btn btn-danger">
+        選択ユーザーを削除
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-striped text-center">
+        <thead class="table-dark">
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th>氏名コード</th>
+            <th>氏名</th>
+            <th>会社</th>
+            <th>地区</th>
+            <th>チーム</th>
+            <th>グループ</th>
+            <th class="text-center">スタッフ権限</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <input type="checkbox"
+                     name="selected_user"
+                     value="{{ u.pk }}">
+            </td>
+            <td>{{ u.code }}</td>
+            <td>{{ u.last_name }} {{ u.first_name }}</td>
+            <td>{{ u.company }}</td>
+            <td>{{ u.district }}</td>
+            <td>{{ u.team }}</td>
+            <td>{{ u.group }}</td>
+            <td class="text-center">
+              {% if u.is_staff %}
+                ✓
+              {% else %}
+                &nbsp;
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'core:user_edit' u.pk %}" class="btn btn-sm btn-outline-primary">
+                編集
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="text-center">ユーザーが存在しません</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+</div>
+
+<script>
+// 全選択／全解除
+document.getElementById('select-all').addEventListener('change', function(e) {
+  document.querySelectorAll('input[name="selected_user"]').forEach(function(cb) {
+    cb.checked = e.target.checked;
+  });
+});
+</script>
+{% endblock %}

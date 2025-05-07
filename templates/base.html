@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}開栓管理システム{% endblock %}</title>
+  <link rel="icon" href="{% static 'images/icon.png' %}" type="image/png">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+  <!-- 全体用カスタムCSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {# 子テンプレートから追加するCSSをここに注入できるように #}
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- ヘッダー画像＋ハンバーガー -->
+  <header class="header-wrapper mb-0">
+    <picture>
+      <source media="(max-width: 767px)"
+              srcset="{% static 'images/header2.png' %}">
+      <img src="{% static 'images/header.png' %}"
+           class="header-img" alt="ヘッダー画像">
+    </picture>
+    <button class="navbar-toggler header-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </header>
+
+  <!-- ナビゲーション本体 -->
+  <nav class="navbar p-0"
+       style="background: url('{% static 'images/header-bottom.png' %}') repeat-y;">
+    <div class="container-fluid">
+      <div class="collapse navbar-collapse justify-content-end"
+           id="mainNavbar">
+        <ul class="navbar-nav flex-column align-items-end pe-3">
+          {% if user.is_authenticated %}
+          <li class="nav-item w-100 text-end mb-2">
+            <span class="nav-link disabled text-primary fw-bold">
+              {{ user.last_name }} {{ user.first_name }} さんログイン中
+            </span>
+          </li>
+          {% endif %}
+          <li class="nav-item text-end mb-1">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'home' %}">ホーム</a>
+          </li>
+          <li class="nav-item text-end mb-1">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'core:project_list' %}">案件一覧</a>
+          </li>
+          {% if user.is_staff %}
+          <li class="nav-item text-end mb-1">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'core:project_create' %}">新規作成</a>
+          </li>
+          <li class="nav-item text-end mb-1">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'core:user_manage' %}">ユーザー管理</a>
+          </li>
+          {% endif %}
+          {% if user.is_authenticated %}
+          <li class="nav-item text-end mb-1">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'core:password_change' %}">パスワード変更</a>
+          </li>
+          <li class="nav-item text-end">
+            <!-- JSでPOST送信するログアウトリンク -->
+            <a href="#" id="logout-link"
+               class="nav-link text-primary fw-bold">
+              ログアウト
+            </a>
+          </li>
+          {% else %}
+          <li class="nav-item text-end">
+            <a class="nav-link text-primary fw-bold"
+               href="{% url 'login' %}">ログイン</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 隠しフォーム：ログアウト用 -->
+  <form id="logout-form"
+        method="post"
+        action="{% url 'logout' %}"
+        style="display:none;">
+    {% csrf_token %}
+  </form>
+
+  <!-- メッセージ＋メインコンテンツ -->
+  <main class="container mt-4">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <!-- ログアウトリンクのPOST送信 & ナビ自動クローズ -->
+  <script>
+    document.getElementById('logout-link')
+      .addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('logout-form').submit();
+      });
+    (function() {
+      const navbar = document.getElementById('mainNavbar');
+      const toggler = document.querySelector('.header-toggler');
+      document.addEventListener('click', function(e) {
+        if (
+          navbar.classList.contains('show') &&
+          !navbar.contains(e.target) &&
+          !toggler.contains(e.target)
+        ) {
+          const bsCollapse = bootstrap.Collapse
+            .getInstance(navbar)
+            || new bootstrap.Collapse(navbar, { toggle: false });
+          bsCollapse.hide();
+        }
+      });
+    })();
+  </script>
+
+  {# 子テンプレートから追加するJSをここに注入できるように #}
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}
+顧客詳細 | {{ project.name }} – {{ assignment.customer.name }}
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">
+    <a href="{% url 'core:project_detail' project.pk %}"
+       class="btn btn-outline-secondary btn-sm me-2">
+      &laquo; 一覧へ戻る
+    </a>
+    顧客詳細：{{ assignment.customer.usage_no }} – {{ assignment.customer.name }}
+  </h2>
+
+  {# ─── ステータス更新フォーム ───────────────── #}
+  <form method="post" class="mb-5">
+    {% csrf_token %}
+    <div class="row gy-3 gx-4">
+      <div class="col-md-4">{{ status_form.pr_status    | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.open_status  | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.open_round   | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.performed_by | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.checked_by   | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.gauge_spec   | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.absence_action | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.leaflet_type | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.leaflet_status | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.m_valve_state | as_crispy_field }}</div>
+      <div class="col-md-4">{{ status_form.m_valve_attach | as_crispy_field }}</div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">ステータス更新</button>
+  </form>
+
+  {# ─── 写真アップロード／プレビュー ───────────────── #}
+  <h5 class="mb-3">写真アップロード／プレビュー</h5>
+  <div class="row row-cols-2 row-cols-md-3 g-4">
+    {% for slot in photo_slots %}
+      <div class="col text-center">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="photo_type" value="{{ slot.type }}">
+          <label for="file_{{ slot.type }}" class="d-block" style="cursor:pointer;">
+            {% if slot.photo %}
+              <img src="{{ slot.photo.image.url }}"
+                   alt="{{ slot.label }}"
+                   class="img-thumbnail mb-2"
+                   style="width:100%; height:auto;">
+            {% else %}
+              <img src="{% static 'core/images/photo_icon.png' %}"
+                   alt="撮影アイコン"
+                   class="img-thumbnail mb-2"
+                   style="width:100%; height:auto;">
+            {% endif %}
+          </label>
+          <input
+            type="file"
+            id="file_{{ slot.type }}"
+            name="image"
+            accept="image/*"
+            capture="environment"
+            style="display:none;"
+            onchange="this.form.submit()">
+          {% if slot.photo %}
+            <button type="submit"
+                    name="delete_photo"
+                    value="{{ slot.type }}"
+                    class="btn btn-sm btn-danger mt-1">
+              削除
+            </button>
+          {% endif %}
+          <div class="mt-1">{{ slot.label }}</div>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

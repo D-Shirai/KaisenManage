@@ -1,0 +1,17 @@
+{# templates/core/user_edit.html #}
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}ユーザー編集 | {{ user_obj.get_full_name }}{% endblock %}
+{% block content %}
+<div class="container my-5" style="max-width:480px;">
+  <h2>ユーザー編集：{{ user_obj.code }} – {{ user_obj.get_full_name }}</h2>
+  <form method="post" action="{% url 'core:user_edit' user_obj.pk %}">
+    {% csrf_token %}
+    {# ここで FormHelper.form_tag=False にしてあるので <form> は出ません #}
+    {% crispy form %}
+    <button type="submit" class="btn btn-primary">保存</button>
+    <a href="{% url 'core:user_manage' %}" class="btn btn-secondary">キャンセル</a>
+  </form>
+</div>
+{% endblock %}

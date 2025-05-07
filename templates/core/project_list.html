@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}案件一覧{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+
+  <!-- 対応中案件 -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>対応中案件</h2>
+    <a href="{% url 'core:project_create' %}"
+       class="btn btn-success d-none d-sm-inline-block">
+      新規作成
+    </a>
+  </div>
+
+  <div class="table-responsive mb-5">
+    <table class="table table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>オーダーNo.</th>
+          <th>案件名</th>
+          <th class="d-none d-sm-table-cell">作成日</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for proj in in_progress %}
+          <tr>
+            <td>
+              <a href="{% url 'core:project_detail' proj.pk %}">
+                {{ proj.order_no }}
+              </a>
+            </td>
+            <td>{{ proj.name }}</td>
+            <td class="d-none d-sm-table-cell">
+              {{ proj.date|date:"Y年n月j日" }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">対応中の案件はありません。</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# 完了案件検索は sm 以上のみ表示 #}
+  <div class="d-none d-sm-block">
+    <h2 class="mb-3">完了案件検索</h2>
+    <form method="get" class="row g-3 align-items-center mb-4">
+      <div class="col-auto d-flex align-items-center flex-nowrap me-5">
+        <label for="id_district" class="form-label mb-0 me-2 text-nowrap">地区</label>
+        <select id="id_district" name="district" class="form-select">
+          <option value="">全て</option>
+          {% for d in district_choices %}
+            <option value="{{ d }}" {% if d == selected_district %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto d-flex align-items-center flex-nowrap me-5">
+        <label class="form-label mb-0 me-2 text-nowrap">作成日</label>
+        <input type="date" name="date_from" class="form-control me-1" value="{{ date_from }}">
+        <span class="mx-1">～</span>
+        <input type="date" name="date_to"   class="form-control"    value="{{ date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">検索</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr>
+            <th>オーダーNo.</th>
+            <th>案件名</th>
+            <th>作成日</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for proj in completed %}
+            <tr>
+              <td>
+                <a href="{% url 'core:project_detail' proj.pk %}">
+                  {{ proj.order_no }}
+                </a>
+              </td>
+              <td>{{ proj.name }}</td>
+              <td>{{ proj.date|date:"Y年n月j日" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="text-center">該当する完了案件はありません。</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

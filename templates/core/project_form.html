@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}新規案件作成{% endblock %}
+{% block content %}
+<div class="container my-5">
+  <h2>新規案件作成</h2>
+
+{% if form.errors %}
+  <div class="alert alert-danger">
+    <ul>
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+          <li><strong>{{ field|capfirst }}</strong>: {{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+
+  <!-- テンプレートA/B ダウンロード -->
+  <div class="mb-4">
+    <a href="{% static 'excel_templates/顧客登録_A.xlsx' %}" class="btn btn-outline-secondary me-2" download>テンプレートA</a>
+    <a href="{% static 'excel_templates/顧客登録_B.xlsx' %}" class="btn btn-outline-secondary" download>テンプレートB</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- オーダーNo. & 案件名 -->
+    <div class="row g-3 mb-3 align-items-end">
+      <div class="col-md-3">
+        {{ form.order_no|as_crispy_field }}
+      </div>
+      <div class="col-md-9">
+        {{ form.name|as_crispy_field }}
+      </div>
+    </div>
+
+    <!-- Excel インポート -->
+    <div class="mb-3">
+      <label class="form-label">顧客情報をExcelでインポート</label>
+      <input type="file" name="excel_file" class="form-control">
+    </div>
+
+    <!-- 所属での絞り込み -->
+    <div class="row g-2 mb-3">
+      <div class="col-md-3">
+        <label class="form-label">会社で絞り込む</label>
+        <select id="filter_company" name="filter_company" class="form-select">
+          {% for val, label in companies %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">地区で絞り込む</label>
+        <select id="filter_district" name="filter_district" class="form-select">
+          {% for val, label in districts %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">チームで絞り込む</label>
+        <select id="filter_team" name="filter_team" class="form-select">
+          {% for val, label in teams %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">グループで絞り込む</label>
+        <select id="filter_group" name="filter_group" class="form-select">
+          {% for val, label in groups %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+
+    <!-- デュアルリスト -->
+    <p class="small text-muted">Ctrlキーを押しながら複数選択できます</p>
+    <div class="row">
+      <div class="col-md-5">
+        <label class="form-label">候補ユーザー</label>
+        <select id="available-users" multiple size="10" class="form-select">
+          {% for u in users %}
+            <option value="{{ u.pk }}"
+                    data-company="{{ u.company }}"
+                    data-district="{{ u.district }}"
+                    data-team="{{ u.team }}"
+                    data-group="{{ u.group }}">
+              {{ u.code }} – {{ u.last_name }} {{ u.first_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex flex-column justify-content-center align-items-center">
+        <button type="button" id="add-user"    class="btn btn-secondary mb-2">&gt;&gt;</button>
+        <button type="button" id="remove-user" class="btn btn-secondary">&lt;&lt;</button>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">アクセス許可ユーザー</label>
+        <select name="allowed_users" id="selected-users" multiple size="10" class="form-select">
+          <!-- JSで移動された値 -->
+        </select>
+      </div>
+    </div>
+
+    <!-- ボタンエリア -->
+    <div class="mt-4 text-center">
+      <button type="submit" class="btn btn-success">次へ（確認画面）</button>
+      <a href="{% url 'core:project_list' %}" class="btn btn-secondary ms-2">キャンセル</a>
+    </div>
+  </form>
+</div>
+
+{% block extra_js %}
+<script>
+function moveOptions(fromId,toId) {
+  const from = document.getElementById(fromId);
+  const to   = document.getElementById(toId);
+  Array.from(from.selectedOptions).forEach(opt => to.appendChild(opt));
+}
+document.getElementById('add-user').addEventListener('click', () => moveOptions('available-users','selected-users'));
+document.getElementById('remove-user').addEventListener('click', () => moveOptions('selected-users','available-users'));
+
+function filterUsers() {
+  const fCompany  = document.getElementById('filter_company').value;
+  const fDistrict = document.getElementById('filter_district').value;
+  const fTeam     = document.getElementById('filter_team').value;
+  const fGroup    = document.getElementById('filter_group').value;
+  const list      = document.getElementById('available-users');
+  Array.from(list.options).forEach(opt => {
+    const match =
+      (!fCompany  || opt.dataset.company  === fCompany) &&
+      (!fDistrict || opt.dataset.district === fDistrict) &&
+      (!fTeam     || opt.dataset.team     === fTeam) &&
+      (!fGroup    || opt.dataset.group    === fGroup);
+    opt.hidden = !match;
+  });
+
+  // グループ選択肢の動的制御
+  const groupSelect = document.getElementById('filter_group');
+  const groups = new Set(
+    Array.from(list.options)
+         .filter(opt => !opt.hidden)
+         .map(opt => opt.dataset.group)
+  );
+  Array.from(groupSelect.options).forEach(opt => {
+    opt.hidden = (opt.value && !groups.has(opt.value));
+  });
+}
+['filter_company','filter_district','filter_team','filter_group'].forEach(id => {
+  document.getElementById(id).addEventListener('change', filterUsers);
+});
+filterUsers();
+</script>
+{% endblock %}
+{% endblock %}

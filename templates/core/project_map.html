@@ -1,0 +1,179 @@
+{# templates/core/project_map.html #}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}ビジュアルマップ | {{ project.name }}{% endblock %}
+
+{# 1) CSS を extra_css ブロックで流し込む #}
+{% block extra_css %}
+<style>
+.room-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;  /* 中央寄せ */
+  gap: 0.5rem;              /* ブロック間の隙間 */
+  margin-bottom: 2rem;
+}
+
+.room-marker {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #6c757d; /* デフォルト */
+}
+
+/* 切り替えボタン下の余白 */
+.status-toggle { margin-bottom: 1.5rem; }
+
+/* 開栓状況 */
+.marker-open_status-完了        { background-color: #28a745; }
+.marker-open_status-開栓作業中  { background-color: #ffc107; color:#000; }
+.marker-open_status-開栓未実施  { background-color: #6c757d; }
+.marker-open_status-未訪問      { background-color: #343a40; }
+
+/* PR状況 */
+.marker-pr_status-在宅   { background-color: #198754; }
+.marker-pr_status-不在   { background-color: #dc3545; }
+.marker-pr_status-未訪問 { background-color: #6c757d; }
+
+/* メーター種別 */
+.marker-meter_type-N { background-color: #0d6efd; }
+.marker-meter_type-F { background-color: #6610f2; }
+
+/* M栓状態 */
+.marker-m_valve_state-アキ    { background-color: #0dcaf0; color:#000; }
+.marker-m_valve_state-シマリ  { background-color: #6f42c1; }
+
+/* M取付外 */
+.marker-m_valve_attach-取付 { background-color: #198754; }
+.marker-m_valve_attach-取外 { background-color: #fd7e14; }
+
+/* 投函ステータス */
+.marker-leaflet_status-未投函 { background-color: #ffc107; color:#000; }
+.marker-leaflet_status-投函済 { background-color: #20c997; }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'core:project_detail' project.pk %}"
+       class="btn btn-secondary btn-sm">
+      &laquo; 一覧へ戻る
+    </a>
+    <h2>ビジュアルマップ：{{ project.name }}</h2>
+    <div style="width:100px;"></div>
+  </div>
+
+  {# 2) ステータス切り替えボタン #}
+  <div class="status-toggle text-center">
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-outline-primary active" data-type="open_status">開栓状況</button>
+      <button type="button" class="btn btn-outline-primary" data-type="pr_status">PR状況</button>
+      <button type="button" class="btn btn-outline-primary" data-type="meter_type">メーター種別</button>
+      <button type="button" class="btn btn-outline-primary" data-type="m_valve_state">M栓状態</button>
+      <button type="button" class="btn btn-outline-primary" data-type="m_valve_attach">M取付外</button>
+      <button type="button" class="btn btn-outline-primary" data-type="leaflet_status">投函ステータス</button>
+    </div>
+  </div>
+
+  {# 3) フロアごとに中央寄せブロックを展開 #}
+  {% for floor, assigns in grouped_assignments %}
+    <div class="mb-4">
+      <h5 class="text-center mb-2">
+        {% if floor == -1 %}その他{% else %}{{ floor }}階{% endif %}
+      </h5>
+      <div class="room-container">
+        {% for a in assigns %}
+          <div class="room-marker"
+               data-open_status="{{ a.open_status }}"
+               data-pr_status="{{ a.pr_status }}"
+               data-meter_type="{{ a.meter_type }}"
+               data-m_valve_state="{{ a.m_valve_state }}"
+               data-m_valve_attach="{{ a.m_valve_attach }}"
+               data-leaflet_status="{{ a.leaflet_status }}"
+               title="
+顧客: {{ a.customer.name }}
+開栓状況: {{ a.open_status }}
+PR状況: {{ a.pr_status }}
+メーター種別: {{ a.meter_type }}
+M栓状態: {{ a.m_valve_state }}
+M取付外: {{ a.m_valve_attach }}
+投函ステータス: {{ a.leaflet_status }}
+               "
+               onclick="location.href='{% url 'core:assignment_detail' project.pk a.pk %}'">
+            {{ a.customer.room_number }}
+          </div>
+        {% empty %}
+          <p class="text-center">該当する割当がありません。</p>
+        {% endfor %}
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-center">表示するデータがありません。</p>
+  {% endfor %}
+
+  {# 4) 凡例 #}
+  <hr>
+  <h5>凡例</h5>
+  <div class="d-flex flex-wrap gap-3 mt-3">
+    <div class="d-flex align-items-center">
+      <span class="d-inline-block marker-open_status-完了" style="width:20px; height:20px; border-radius:3px;"></span>
+      <span class="ms-1">開栓完了</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <span class="d-inline-block marker-open_status-開栓作業中" style="width:20px; height:20px; border-radius:3px;"></span>
+      <span class="ms-1">開栓作業中</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <span class="d-inline-block marker-open_status-開栓未実施" style="width:20px; height:20px; border-radius:3px;"></span>
+      <span class="ms-1">開栓未実施</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <span class="d-inline-block marker-open_status-未訪問" style="width:20px; height:20px; border-radius:3px;"></span>
+      <span class="ms-1">未訪問</span>
+    </div>
+    {# 他ステータスも追加可能 #}
+  </div>
+</div>
+{% endblock content %}
+
+{# 5) JS を extra_js ブロックで流し込む #}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  let currentType = 'open_status';
+  const markers = document.querySelectorAll('.room-marker');
+  const buttons = document.querySelectorAll('.status-toggle button');
+
+  function updateMarkers(){
+    markers.forEach(el=>{
+      // リセット
+      el.className = 'room-marker';
+      // 選択されたステータス値を取得
+      const raw = el.dataset[currentType] || '';
+      const safe = raw.replace(/[^0-9A-Za-z\u4E00-\u9FFF]/g,'');
+      // クラス追加
+      el.classList.add(`marker-${currentType}-${safe}`);
+    });
+  }
+
+  buttons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      buttons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentType = btn.dataset.type;
+      updateMarkers();
+    });
+  });
+
+  updateMarkers();
+});
+</script>
+{% endblock extra_js %}

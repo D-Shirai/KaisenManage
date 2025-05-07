@@ -7,3 +7,4 @@ openpyxl>=3.1
 django-crispy-forms==2.4
 crispy-bootstrap5==2025.4
 django-bootstrap4==24.4
+Pillow>=9.0

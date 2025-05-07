@@ -2,7 +2,6 @@ appdirs==1.4.4
 asgiref==3.8.1
 atomicwrites==1.4.0
 backports.weakref==1.0.post1
-conda-verify==3.4.2
 crispy-bootstrap5==2025.4
 dj-database-url==2.3.0
 Django==5.1.2

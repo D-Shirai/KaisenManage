@@ -11,8 +11,9 @@ from django.forms import formset_factory
 from django.urls import reverse
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q  
-from django.db.models.functions import Substr  
+from django.db.models import Q
+# from django.db.models.functions import Substr  # 未使用ならコメントアウト
+from django.db import IntegrityError  # 必要に応じて
 
 from .models import Project, Assignment, Customer, Photo
 from .forms import (
@@ -22,8 +23,8 @@ from .forms import (
     CustomUserForm, UserImportEditForm
 )
 
-
 User = get_user_model()
+
 
 
 # ─── ホーム画面 ───────────────────────────────────────────
@@ -609,11 +610,13 @@ def import_users_confirm(request):
         action    = request.POST.get('action')
         index_str = request.POST.get('index')
 
+        # ─── 編集 ─────────────────────────────
         if action == 'edit' and index_str is not None:
             idx = int(index_str)
             request.session['edit_index'] = idx
             return redirect('core:import_users_edit')
 
+        # ─── 削除 ─────────────────────────────
         if action == 'delete' and index_str is not None:
             idx = int(index_str)
             if 0 <= idx < len(preview_data):
@@ -625,29 +628,42 @@ def import_users_confirm(request):
                 messages.info(request, f"{idx+1} 行目を削除しました。")
             return redirect('core:import_users_confirm')
 
+        # ─── 登録 ─────────────────────────────
         if action == 'register':
-            for row in preview_data:
-                user, created = User.objects.update_or_create(
-                    code=row['code'],
-                    defaults={
-                        'username':  row['code'],
-                        'last_name': row['last_name'],
-                        'first_name':row['first_name'],
-                        'company':   row['company'],
-                        'district':  row['district'],
-                        'team':      row['team'],
-                        'group':     row['group'],
-                        'is_staff':  row['is_staff'],
-                    }
-                )
-                if created:
-                    user.set_password(row['code'])
-                    user.save(update_fields=['password'])
+            imported = []
+            skipped  = []
 
+            for row in preview_data:
+                code = row.get('code')
+                if not code:
+                    continue
+
+                # code または username が既存ならスキップ
+                if User.objects.filter(Q(code=code) | Q(username=code)).exists():
+                    skipped.append(code)
+                    continue
+
+                # 新規作成
+                user = User.objects.create_user(
+                    code=code,
+                    username=code,
+                    last_name=row.get('last_name', ''),
+                    first_name=row.get('first_name', ''),
+                    company=row.get('company', ''),
+                    district=row.get('district', ''),
+                    team=row.get('team', ''),
+                    group=row.get('group', ''),
+                    is_staff=row.get('is_staff', False),
+                    password=code,
+                )
+                imported.append(code)
+
+            # セッションとメッセージ
             request.session.pop('preview_data', None)
             messages.success(
                 request,
-                'ユーザーをインポートしました（初期パスワードは氏名コードです）。'
+                f"{len(imported)} 人をインポート（初期パスワードは氏名コード）。"
+                + (f" {len(skipped)} 人は既に存在していたためスキップしました。" if skipped else "")
             )
             return redirect('core:user_manage')
 

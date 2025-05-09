@@ -66,13 +66,18 @@ if os.environ.get("DATABASE_URL"):
         )
     }
 else:
-    # ローカル開発時は SQLite
+    # ローカル開発時
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE':   'django.db.backends.postgresql',
+            'NAME':     'kaisendb',
+            'USER':     'kaisenuser',
+            'PASSWORD': '52961630',
+            'HOST':     'localhost',
+            'PORT':     '5432',
         }
     }
+
 
 
 

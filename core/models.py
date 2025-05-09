@@ -43,7 +43,7 @@ class Project(models.Model):
     order_no = models.CharField(
         "オーダーNo.",
         max_length=6,
-        unique=True,
+        unique=False,
         null=True,
         blank=True,
         validators=[
@@ -118,6 +118,18 @@ class Customer(models.Model):
             )
         ]
     )
+
+    def save(self, *args, **kwargs):
+        # インポート時に14桁の場合は末尾1桁を切り捨て
+        raw = self.usage_no or ''
+        if len(raw) == 14:
+            raw = raw[:-1]
+        # 末尾4桁を抽出し、先頭ゼロを保持
+        self.usage_no = raw[-4:].zfill(4)
+        super().save(*args, **kwargs)
+
+
+
     name = models.CharField("氏名", max_length=20, blank=True)
     room_number = models.CharField("部屋番号", max_length=20, blank=True)
     building_name = models.CharField(

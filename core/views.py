@@ -132,27 +132,32 @@ def project_create(request):
                 preview = []
                 for row in sheet.iter_rows(min_row=2, values_only=True):
                     raw_usage = row[idx('ご使用番号')] or ''
-                    usage_no  = str(raw_usage).strip()
+                    usage_str = str(raw_usage).strip()
                     # 使用番号が空ならスキップ
-                    if not usage_no:
+                    if not usage_str:
                         continue
-                    # 必要なカラムを取得
-                    raw_name       = row[idx('お名前')] or ''
-                    raw_tower      = row[idx('棟番号')] or ''
-                    raw_chou       = row[idx('丁番号')] or ''
-                    raw_meter_tp   = row[idx('メーター種別')] or ''
-                    raw_meter_no   = row[idx('メーター番号')] or ''
+                    # 14桁なら末尾1文字を切り捨て
+                    if len(usage_str) == 14:
+                        usage_str = usage_str[:-1]
+                    # 末尾4桁を抽出し、先頭ゼロを保持
+                    four = usage_str[-4:].zfill(4)
 
-                    # 整形
+                    raw_name      = row[idx('お名前')] or ''
+                    raw_tower     = row[idx('棟番号')] or ''
+                    raw_chou      = row[idx('丁番号')] or ''
+                    raw_meter_tp  = row[idx('メーター種別')] or ''
+                    raw_meter_no  = row[idx('メーター番号')] or ''
+
+                    # メーター番号は数字なら0パディング
                     meter_number = str(raw_meter_no).strip()
                     if meter_number.isdigit():
                         meter_number = meter_number.zfill(4)
 
                     preview.append({
-                        'usage_no':    usage_no.zfill(4),
-                        'name':        str(raw_name).strip(),
-                        'room_number': str(raw_tower).strip() or str(raw_chou).strip(),
-                        'meter_type':  str(raw_meter_tp).strip(),
+                        'usage_no':     four,
+                        'name':         str(raw_name).strip(),
+                        'room_number':  str(raw_tower).strip() or str(raw_chou).strip(),
+                        'meter_type':   str(raw_meter_tp).strip(),
                         'meter_number': meter_number,
                     })
 
@@ -168,16 +173,17 @@ def project_create(request):
         form = ProjectForm()
 
     return render(request, 'core/project_form.html', {
-        'form':            form,
-        'companies':       companies,
-        'districts':       districts,
-        'teams':           teams,
-        'groups':          groups,
-        'users':           users,
-        'default_company': default_company,
+        'form':             form,
+        'companies':        companies,
+        'districts':        districts,
+        'teams':            teams,
+        'groups':           groups,
+        'users':            users,
+        'default_company':  default_company,
         'default_district': default_district,
-        'default_team':    default_team,
+        'default_team':     default_team,
     })
+
 
 
 @login_required

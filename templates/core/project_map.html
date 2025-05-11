@@ -1,3 +1,4 @@
+{# templates/core/project_map.html #}
 {% extends "base.html" %}
 {% load static %}
 
@@ -12,7 +13,6 @@
   gap: 0.5rem;
   margin-bottom: 2rem;
 }
-
 .room-marker {
   width: 60px;
   height: 60px;
@@ -25,10 +25,9 @@
   cursor: pointer;
   background-color: #6c757d;
 }
-
 .status-toggle { margin-bottom: 1.5rem; }
 
-/* 凡例グループ */
+/* ―― 凡例グループ ―― */
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -36,7 +35,6 @@
   gap: 1.5rem;
   margin-bottom: 0.5rem;
 }
-
 #legend-container {
   display: flex;
   flex-wrap: wrap;
@@ -45,41 +43,43 @@
   margin-top: 1rem;
 }
 
-/* 開栓状況 */
-.marker-open_status-完了        { background-color: rgb(102, 236, 133); }
-.marker-open_status-開栓作業中  { background-color: rgb(237, 204, 105); color: #000; }
-.marker-open_status-開栓未実施  { background-color: rgb(229, 126, 141); }
-.marker-open_status-未訪問      { background-color: rgb(161, 168, 174); }
+/* ■ 開栓状況（code 値） */
+.marker-open_status-completed     { background-color: rgb(102, 236, 133); }
+.marker-open_status-in_progress   { background-color: rgb(237, 204, 105); color: #000; }
+.marker-open_status-not_done      { background-color: rgb(229, 126, 141); }
+.marker-open_status-not_visited   { background-color: rgb(161, 168, 174); }
 
-/* PR状況 */
-.marker-pr_status-在宅   { background-color: rgb(102, 236, 133); }
-.marker-pr_status-不在   { background-color: rgb(229, 126, 141); }
-.marker-pr_status-未訪問 { background-color: rgb(161, 168, 174); }
+/* ■ PR状況 */
+.marker-pr_status-home           { background-color: rgb(102, 236, 133); }
+.marker-pr_status-absent         { background-color: rgb(229, 126, 141); }
+.marker-pr_status-not_visited    { background-color: rgb(161, 168, 174); }
 
-/* メーター種別 */
-.marker-meter_type-N        { background-color: rgb(102, 236, 133); }
-.marker-meter_type-N-other  { background-color: rgb(79, 177, 102); }
-.marker-meter_type-F        { background-color: rgb(161, 168, 174); }
-.marker-meter_type-A        { background-color: rgb(229, 126, 141); }
+/* ■ メーター種別 */
+.marker-meter_type-N            { background-color: rgb(102, 236, 133); }
+.marker-meter_type-N-other      { background-color: rgb(79, 177, 102); }
+.marker-meter_type-F            { background-color: rgb(161, 168, 174); }
+.marker-meter_type-A            { background-color: rgb(229, 126, 141); }
 
-/* M栓状態 */
-.marker-m_valve_state-アキ   { background-color: rgb(102, 236, 133); }
-.marker-m_valve_state-シマリ { background-color: rgb(229, 126, 141); }
+/* ■ M栓状態 */
+.marker-m_valve_state-open      { background-color: rgb(102, 236, 133); }
+.marker-m_valve_state-closed    { background-color: rgb(229, 126, 141); }
 
-/* M取付外 */
-.marker-m_valve_attach-取付 { background-color: rgb(102, 236, 133); }
-.marker-m_valve_attach-取外 { background-color: rgb(229, 126, 141); }
+/* ■ M取付外 */
+.marker-m_valve_attach-attached { background-color: rgb(102, 236, 133); }
+.marker-m_valve_attach-detached { background-color: rgb(229, 126, 141); }
 
-/* 投函ステータス */
-.marker-leaflet_status-未投函 { background-color: rgb(229, 126, 141); }
-.marker-leaflet_status-投函済 { background-color: rgb(102, 236, 133); }
+/* ■ 投函ステータス */
+.marker-leaflet_status-not_posted { background-color: rgb(229, 126, 141); }
+.marker-leaflet_status-posted     { background-color: rgb(102, 236, 133); }
 </style>
 {% endblock extra_css %}
+
 
 {% block content %}
 <div class="container my-5">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{% url 'core:project_detail' project.pk %}" class="btn btn-secondary btn-sm">&laquo; 一覧へ戻る</a>
+    <a href="{% url 'core:project_detail' project.pk %}"
+       class="btn btn-secondary btn-sm">&laquo; 一覧へ戻る</a>
     <h2>ビジュアルマップ：{{ project.name }}</h2>
     <div style="width:100px;"></div>
   </div>
@@ -87,17 +87,19 @@
   <div class="status-toggle text-center">
     <div class="btn-group" role="group">
       <button type="button" class="btn btn-outline-primary active" data-type="open_status">開栓状況</button>
-      <button type="button" class="btn btn-outline-primary" data-type="pr_status">PR状況</button>
-      <button type="button" class="btn btn-outline-primary" data-type="meter_type">メーター種別</button>
-      <button type="button" class="btn btn-outline-primary" data-type="m_valve_state">M栓状態</button>
-      <button type="button" class="btn btn-outline-primary" data-type="m_valve_attach">M取付外</button>
-      <button type="button" class="btn btn-outline-primary" data-type="leaflet_status">投函ステータス</button>
+      <button type="button" class="btn btn-outline-primary"        data-type="pr_status">PR状況</button>
+      <button type="button" class="btn btn-outline-primary"        data-type="meter_type">メーター種別</button>
+      <button type="button" class="btn btn-outline-primary"        data-type="m_valve_state">M栓状態</button>
+      <button type="button" class="btn btn-outline-primary"        data-type="m_valve_attach">M取付外</button>
+      <button type="button" class="btn btn-outline-primary"        data-type="leaflet_status">投函ステータス</button>
     </div>
   </div>
 
   {% for floor, assigns in grouped_assignments %}
   <div class="mb-4">
-    <h5 class="text-center mb-2">{% if floor == -1 %}その他{% else %}{{ floor }}階{% endif %}</h5>
+    <h5 class="text-center mb-2">
+      {% if floor == -1 %}その他{% else %}{{ floor }}階{% endif %}
+    </h5>
     <div class="room-container">
       {% for a in assigns %}
       <div class="room-marker"
@@ -107,7 +109,13 @@
            data-m_valve_state="{{ a.m_valve_state }}"
            data-m_valve_attach="{{ a.m_valve_attach }}"
            data-leaflet_status="{{ a.leaflet_status }}"
-           title="顧客: {{ a.customer.name }}\n開栓状況: {{ a.open_status }}\nPR状況: {{ a.pr_status }}\nメーター種別: {{ a.meter_type }}\nM栓状態: {{ a.m_valve_state }}\nM取付外: {{ a.m_valve_attach }}\n投函ステータス: {{ a.leaflet_status }}"
+           title="顧客: {{ a.customer.name }}
+開栓状況: {{ a.get_open_status_display }}
+PR状況: {{ a.get_pr_status_display }}
+メーター種別: {{ a.get_meter_type_display }}
+M栓状態: {{ a.get_m_valve_state_display }}
+M取付外: {{ a.get_m_valve_attach_display }}
+投函ステータス: {{ a.get_leaflet_status_display }}"
            onclick="location.href='{% url 'core:assignment_detail' project.pk a.pk %}'">
         {{ a.customer.room_number }}
       </div>
@@ -122,32 +130,84 @@
   <h5 class="text-center">凡例</h5>
   <div id="legend-container">
     <div class="legend legend-open_status">
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-open_status-完了" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">開栓完了</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-open_status-開栓作業中" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">開栓作業中</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-open_status-開栓未実施" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">開栓未実施</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-open_status-未訪問" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">未訪問</span></div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-open_status-completed" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">開栓完了</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-open_status-in_progress" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">開栓作業中</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-open_status-not_done" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">開栓未実施</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-open_status-not_visited" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">未訪問</span>
+      </div>
     </div>
     <div class="legend legend-pr_status" style="display:none">
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-pr_status-在宅" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">在宅</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-pr_status-不在" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">不在</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-pr_status-未訪問" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">未訪問</span></div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-pr_status-home" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">在宅</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-pr_status-absent" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">不在</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-pr_status-not_visited" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">未訪問</span>
+      </div>
     </div>
     <div class="legend legend-meter_type" style="display:none">
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-meter_type-N" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">N</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-meter_type-N-other" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">N(他)</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-meter_type-F" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">F</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-meter_type-A" style="width:20px;height:20px;border-radius:3px;"></span><span class="ms-1">A</span></div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-meter_type-N" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">N</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-meter_type-N-other" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">N(他)</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-meter_type-F" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">F</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-meter_type-A" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">A</span>
+      </div>
     </div>
     <div class="legend legend-m_valve_state" style="display:none">
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-m_valve_state-アキ"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">アキ</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-m_valve_state-シマリ"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">シマリ</span></div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-m_valve_state-open" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">アキ</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-m_valve_state-closed" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">シマリ</span>
+      </div>
     </div>
-      <div class="legend legend-m_valve_attach" style="display:none"><div class="d-flex align-items-center"><span class="d-inline-block marker-m_valve_attach-取付"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">取付</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-m_valve_attach-取外"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">取外</span></div>
+    <div class="legend legend-m_valve_attach" style="display:none">
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-m_valve_attach-attached" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">取付</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-m_valve_attach-detached" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">取外</span>
+      </div>
     </div>
     <div class="legend legend-leaflet_status" style="display:none">
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-leaflet_status-未投函"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">未投函</span></div>
-      <div class="d-flex align-items-center"><span class="d-inline-block marker-leaflet_status-投函済"style="width:20px; height:20px; border-radius:3px;"></span><span class="ms-1">投函済</span></div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-leaflet_status-not_posted" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">未投函</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="d-inline-block marker-leaflet_status-posted" style="width:20px;height:20px;border-radius:3px;"></span>
+        <span class="ms-1">投函済</span>
+      </div>
     </div>
   </div>
 </div>
@@ -155,32 +215,33 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', ()=> {
   let currentType = 'open_status';
   const markers = document.querySelectorAll('.room-marker');
   const buttons = document.querySelectorAll('.status-toggle button');
   const legends = document.querySelectorAll('#legend-container .legend');
 
-  function updateMarkers(){
-    markers.forEach(el=>{
+  function updateMarkers() {
+    markers.forEach(el => {
       el.className = 'room-marker';
       let raw = el.dataset[currentType] || '';
-      // meter_type の "N(他)" を "N-other" に変換
-      if(currentType === 'meter_type') raw = raw.replace(/\(他\)/g, '-other');
-      const safe = raw.replace(/[^0-9A-Za-z\u4E00-\u9FFF\u30A0-\u30FF\-]/g, '');
-      el.classList.add(`marker-${currentType}-${safe}`);
+      raw = raw
+        .toString()
+        .replace(/\(他\)/, '-other')
+        .replace(/[^0-9A-Za-z\-]/g, '');
+      el.classList.add(`marker-${currentType}-${raw}`);
     });
   }
 
-  function updateLegend(){
-    legends.forEach(el=> el.style.display = 'none');
+  function updateLegend() {
+    legends.forEach(el => el.style.display = 'none');
     const active = document.querySelector(`#legend-container .legend-${currentType}`);
-    if(active) active.style.display = 'flex';
+    if (active) active.style.display = 'flex';
   }
 
-  buttons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      buttons.forEach(b=>b.classList.remove('active'));
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentType = btn.dataset.type;
       updateMarkers();

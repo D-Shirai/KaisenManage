@@ -151,15 +151,15 @@
               </td>
               <td>{{ a.meter_number }}</td>
               <td>{{ a.meter_type }}</td>
-              <td>{{ a.m_valve_state }}</td>
-              <td>{{ a.m_valve_attach }}</td>
-              <td>{{ a.pr_status }}</td>
-              <td>{{ a.gauge_spec }}</td>
-              <td>{{ a.absence_action }}</td>
-              <td>{{ a.open_status }}</td>
+              <td>{{ a.get_m_valve_state_display }}</td>
+              <td>{{ a.get_m_valve_attach_display }}</td>
+              <td>{{ a.get_pr_status_display }}</td>
+              <td>{{ a.get_gauge_spec_display }}</td>
+              <td>{{ a.get_absence_action_display }}</td>
+              <td>{{ a.get_open_status_display }}</td>
               <td>{{ a.open_round }}</td>
-              <td>{{ a.leaflet_type }}</td>
-              <td>{{ a.leaflet_status }}</td>
+              <td>{{ a.get_leaflet_type_display }}</td>
+              <td>{{ a.get_leaflet_status_display }}</td>
             </tr>
             {% endfor %}
           </tbody>

@@ -295,8 +295,11 @@ class Assignment(models.Model):
             self.sequence = (last.sequence if last else 0) + 1
 
         if not self.m_valve_state:
-            # meter_type によらずデフォルトは「シマリ」
-            self.m_valve_state = 'closed'
+            # メーター種別が N または A のときは「アキ」、それ以外（F やその他）は「シマリ」
+            if self.meter_type in ('N', 'A'):
+                self.m_valve_state = 'open'
+            else:
+                self.m_valve_state = 'closed'
 
         now = timezone.now()
         if self.performed_by and not self.performed_at:

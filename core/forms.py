@@ -12,7 +12,6 @@ from .models import Project, Assignment, Photo
 User = get_user_model()
 
 
-
 class ProjectForm(forms.ModelForm):
     """
     新規・編集用の案件フォーム。
@@ -108,8 +107,7 @@ class CustomerExcelUploadForm(forms.Form):
         return f
 
 
-
-class AssignmentForm(forms.ModelForm):
+class StatusForm(forms.ModelForm):
     """
     割当ステータス更新用フォーム
     """
@@ -152,7 +150,7 @@ class PhotoForm(forms.ModelForm):
         fields = ['photo_type', 'image']
         widgets = {
             'photo_type': forms.Select(attrs={'class': 'form-select'}),
-            'image':      forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'image':      forms.ClearableFileInput(attrs={'class': 'form-control'})
         }
 
 
@@ -209,12 +207,11 @@ class BulkAssignmentForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     m_valve_attach = forms.ChoiceField(
-    label="メーター取外",
-    choices=[('', '――')] + list(Assignment.MVALVE_ATTACH_CHOICES),
-    required=False,
-    widget=forms.Select(attrs={'class': 'form-select'})
-)
-
+        label="M取付外",
+        choices=[('', '――')] + list(Assignment.MVALVE_ATTACH_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
 
 class ExcelUploadForm(forms.Form):

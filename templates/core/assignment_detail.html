@@ -1,80 +1,320 @@
+{# templates/core/assignment_detail.html #}
 {% extends "base.html" %}
 {% load static crispy_forms_tags %}
 
-{% block title %}
-顧客詳細 | {{ project.name }} – {{ assignment.customer.name }}
+{% block extra_css %}
+<style>
+/* ── レイアウト切り替え ── */
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: block !important; }
+}
+@media (min-width: 769px) {
+  .desktop-only { display: block !important; }
+  .mobile-only  { display: none !important; }
+}
+
+/* ── ３列グリッド／アイコンのみ ── */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.status-item {
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.status-item .group-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.status-item img {
+  width: 6rem;
+  height: 6rem;
+  margin-bottom: 0.5rem;
+}
+.status-item input[type="number"] {
+  width: 4rem;
+  margin: 0 auto;
+  text-align: center;
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container my-5">
   <h2 class="mb-4">
     <a href="{% url 'core:project_detail' project.pk %}"
-       class="btn btn-outline-secondary btn-sm me-2">
-      &laquo; 一覧へ戻る
-    </a>
+       class="btn btn-outline-secondary btn-sm me-2">&laquo; 一覧へ戻る</a>
     顧客詳細：{{ assignment.customer.usage_no }} – {{ assignment.customer.name }}
   </h2>
 
-  {# ─── ステータス更新フォーム ───────────────── #}
-  <form method="post" class="mb-5">
-    {% csrf_token %}
-    <div class="row gy-3 gx-4">
-      <div class="col-md-4">{{ status_form.pr_status    | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.open_status  | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.open_round   | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.performed_by | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.checked_by   | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.gauge_spec   | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.absence_action | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.leaflet_type | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.leaflet_status | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.m_valve_state | as_crispy_field }}</div>
-      <div class="col-md-4">{{ status_form.m_valve_attach | as_crispy_field }}</div>
-    </div>
-    <button type="submit" class="btn btn-primary mt-3">ステータス更新</button>
-  </form>
-
-  {# ─── 写真アップロード／プレビュー ───────────────── #}
-  <h5 class="mb-3">写真アップロード／プレビュー</h5>
-  <div class="row row-cols-2 row-cols-md-3 g-4">
-    {% for slot in photo_slots %}
-      <div class="col text-center">
-        <form method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          <input type="hidden" name="photo_type" value="{{ slot.type }}">
-          <label for="file_{{ slot.type }}" class="d-block" style="cursor:pointer;">
-            {% if slot.photo %}
-              <img src="{{ slot.photo.image.url }}"
-                   alt="{{ slot.label }}"
-                   class="img-thumbnail mb-2"
-                   style="width:100%; height:auto;">
-            {% else %}
-              <img src="{% static 'core/images/photo_icon.png' %}"
-                   alt="撮影アイコン"
-                   class="img-thumbnail mb-2"
-                   style="width:100%; height:auto;">
-            {% endif %}
-          </label>
-          <input
-            type="file"
-            id="file_{{ slot.type }}"
-            name="image"
-            accept="image/*"
-            capture="environment"
-            style="display:none;"
-            onchange="this.form.submit()">
-          {% if slot.photo %}
-            <button type="submit"
-                    name="delete_photo"
-                    value="{{ slot.type }}"
-                    class="btn btn-sm btn-danger mt-1">
-              削除
-            </button>
-          {% endif %}
-          <div class="mt-1">{{ slot.label }}</div>
-        </form>
+  {# ─── PC版フォーム ───────────────── #}
+  <div class="desktop-only">
+    <form method="post" class="mb-5">
+      {% csrf_token %}
+      <div class="row gy-3 gx-4">
+        <div class="col-md-4">{{ status_form.pr_status    | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.open_status  | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.open_round   | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.performed_by | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.checked_by   | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.gauge_spec   | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.absence_action | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.leaflet_type | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.leaflet_status | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.m_valve_state | as_crispy_field }}</div>
+        <div class="col-md-4">{{ status_form.m_valve_attach | as_crispy_field }}</div>
       </div>
-    {% endfor %}
+      <button type="submit" class="btn btn-primary mt-3">ステータス更新</button>
+    </form>
+  </div>
+
+  {# ─── モバイル版：アイコン→更新ボタン ───────────────── #}
+  <div class="mobile-only">
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+
+      {# ヘッダー情報 #}
+      <div class="mb-3 text-center">
+        <div>部屋番号：{{ assignment.customer.room_number }}</div>
+        <div>メーター番号：{{ assignment.meter_number }}</div>
+        <div>メーター種別：{{ assignment.meter_type }}</div>
+      </div>
+
+      {# テーブル：ゲージ／不在時処置／用紙種別 #}
+      <table class="table table-sm text-center mb-3">
+        <thead>
+          <tr><th>ゲージ仕様</th><th>不在時処置</th><th>用紙種別</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ assignment.get_gauge_spec_display }}</td>
+            <td>{{ assignment.get_absence_action_display }}</td>
+            <td>{{ assignment.get_leaflet_type_display }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {# ３列グリッド #}
+      <div class="status-grid">
+
+        {# PR状況 #}
+        <div class="status-item"
+             data-field="pr_status"
+             data-list="未訪問,在宅,不在"
+             data-suffix-list="not_visited,home,absent"
+             onclick="cycleStatus(this)">
+          <div class="group-title">PR状況</div>
+          {% if assignment.pr_status == '未訪問' %}
+            <img src="{% static 'core/icons/assignment/pr_not_visited.png' %}" alt="未訪問">
+          {% elif assignment.pr_status == '在宅' %}
+            <img src="{% static 'core/icons/assignment/pr_home.png' %}" alt="在宅">
+          {% else %}
+            <img src="{% static 'core/icons/assignment/pr_absent.png' %}" alt="不在">
+          {% endif %}
+          <input type="hidden" name="pr_status" id="pr_status" value="{{ assignment.pr_status }}">
+        </div>
+
+        {# M栓状況 #}
+        <div class="status-item"
+             data-field="m_valve_state"
+             data-list="アキ,シマリ"
+             data-suffix-list="open,closed"
+             onclick="cycleStatus(this)">
+          <div class="group-title">M栓状況</div>
+          {% if assignment.m_valve_state == 'アキ' %}
+            <img src="{% static 'core/icons/assignment/m_open.png' %}" alt="アキ">
+          {% else %}
+            <img src="{% static 'core/icons/assignment/m_closed.png' %}" alt="シマリ">
+          {% endif %}
+          <input type="hidden" name="m_valve_state" id="m_valve_state" value="{{ assignment.m_valve_state }}">
+        </div>
+
+        {# M取付外 #}
+        <div class="status-item"
+             data-field="m_valve_attach"
+             data-list="取付,取外"
+             data-suffix-list="attached,detached"
+             onclick="cycleStatus(this)">
+          <div class="group-title">M取付外</div>
+          {% if assignment.m_valve_attach == '取付' %}
+            <img src="{% static 'core/icons/assignment/m_attach_attached.png' %}" alt="取付">
+          {% else %}
+            <img src="{% static 'core/icons/assignment/m_attach_detached.png' %}" alt="取外">
+          {% endif %}
+          <input type="hidden" name="m_valve_attach" id="m_valve_attach" value="{{ assignment.m_valve_attach }}">
+        </div>
+
+        {# 開栓状況 & 巡目入力をセット #}
+        <div class="status-item"
+             data-field="open_status"
+             data-list="未訪問,作業中,完了,未実施"
+             data-suffix-list="not_visited,in_progress,completed,not_done"
+             onclick="cycleStatus(this)">
+          <div class="group-title">開栓状況</div>
+          {% if assignment.open_status == '未訪問' %}
+            <img src="{% static 'core/icons/assignment/open_not_visited.png' %}" alt="未訪問">
+          {% elif assignment.open_status == '作業中' %}
+            <img src="{% static 'core/icons/assignment/open_in_progress.png' %}" alt="作業中">
+          {% elif assignment.open_status == '完了' %}
+            <img src="{% static 'core/icons/assignment/open_completed.png' %}" alt="開栓完了">
+          {% else %}
+            <img src="{% static 'core/icons/assignment/open_not_done.png' %}" alt="開栓未実施">
+          {% endif %}
+          <input type="hidden" name="open_status" id="open_status" value="{{ assignment.open_status }}">
+          <input
+            type="number"
+            name="open_round"
+            id="open_round"
+            placeholder="-"
+            {% if assignment.open_status != '未訪問' %} value="{{ assignment.open_round }}" required {% endif %}
+          >
+        </div>
+
+        {# 投函ステータス #}
+        <div class="status-item"
+             data-field="leaflet_status"
+             data-list="未投函,投函なし,F投函,修投函,その他投函"
+             data-suffix-list="not_posted,none,f_posted,shu_posted,other_posted"
+             data-type="{{ assignment.leaflet_type }}"
+             onclick="cycleStatus(this)">
+          <div class="group-title">不在用紙</div>
+          {% if not assignment.leaflet_type or assignment.leaflet_type == '不要' %}
+            <img src="{% static 'core/icons/assignment/paper_none.png' %}" alt="投函なし">
+            <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="">
+            <input type="hidden" name="leaflet_status" id="leaflet_status" value="投函なし">
+          {% else %}
+            <img src="{% static 'core/icons/assignment/paper_not_posted.png' %}" alt="未投函">
+            <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
+            <input type="hidden" name="leaflet_status" id="leaflet_status" value="未投函">
+          {% endif %}
+        </div>
+
+        {# 写真登録リンク #}
+        <div class="status-item">
+          <div class="group-title">写真登録</div>
+          <a href="{% url 'core:photo_upload' pk=project.pk assignment_pk=assignment.pk %}">
+            <img src="{% static 'core/icons/assignment/photo_plus.png' %}" alt="写真登録">
+          </a>
+        </div>
+      </div><!-- /.status-grid -->
+
+      <button type="submit" class="btn btn-primary w-100 mb-2">更新</button>
+      <a href="{% url 'core:project_detail' project.pk %}"
+         class="btn btn-secondary w-100">キャンセル</a>
+    </form>
+  </div>
+
+  {# ─── PC版：写真アップロード／プレビュー ───────────────── #}
+  <div class="desktop-only">
+    <h5 class="mb-3">写真アップロード／プレビュー</h5>
+    <div class="row row-cols-2 row-cols-md-3 g-4">
+      {% for slot in photo_slots %}
+        <div class="col text-center">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="photo_type" value="{{ slot.type }}">
+            <label for="file_{{ slot.type }}" class="d-block" style="cursor:pointer;">
+              {% if slot.photo %}
+                <img src="{{ slot.photo.image.url }}"
+                     alt="{{ slot.label }}"
+                     class="img-thumbnail mb-2"
+                     style="width:100%; height:auto;">
+              {% else %}
+                <img src="{% static 'core/images/photo_icon.png' %}"
+                     alt="撮影アイコン"
+                     class="img-thumbnail mb-2"
+                     style="width:100%; height:auto;">
+              {% endif %}
+            </label>
+            <input type="file" id="file_{{ slot.type }}" name="image"
+                   accept="image/*" capture="environment"
+                   style="display:none;" onchange="this.form.submit()">
+            {% if slot.photo %}
+              <button type="submit" name="delete_photo" value="{{ slot.type }}"
+                      class="btn btn-sm btn-danger mt-1">削除</button>
+            {% endif %}
+            <div class="mt-1">{{ slot.label }}</div>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const STATIC_ROOT = "{% static '' %}";
+
+  function cycleStatus(el) {
+    const labels  = el.dataset.list.split(',');
+    const suffixs = el.dataset.suffixList.split(',');
+    const field   = el.dataset.field;
+
+    const hiddenStatus = document.getElementById(field);
+    let current = hiddenStatus.value;
+    let idx = labels.indexOf(current);
+    idx = (idx + 1) % labels.length;
+
+    const nextLabel = labels[idx];
+    const nextSuf   = suffixs[idx];
+    let fileName;
+
+    if (field === 'open_status') {
+      // 開栓状況の順番：未訪問→作業中→完了→未実施
+      if (nextLabel === '未訪問') {
+        fileName = 'open_not_visited.png';
+        // 巡目欄リセット
+        const rnd = document.getElementById('open_round');
+        rnd.value = '';
+        rnd.required = false;
+      }
+      else if (nextLabel === '作業中') {
+        fileName = 'open_in_progress.png';
+      }
+      else if (nextLabel === '完了') {
+        fileName = 'open_completed.png';
+      }
+      else {  // '未実施'
+        fileName = 'open_not_done.png';
+      }
+      // 未訪問以外は巡目必須に
+      if (nextLabel !== '未訪問') {
+        const rnd = document.getElementById('open_round');
+        rnd.required = true;
+      }
+    }
+    else if (field === 'leaflet_status') {
+      if (nextLabel === '投函なし') {
+        fileName = 'paper_none.png';
+        document.getElementById('leaflet_type').value = '';
+      }
+      else if (nextLabel === '未投函') {
+        fileName = 'paper_not_posted.png';
+      }
+      else {
+        fileName = 'paper_' + nextSuf + '.png';
+        const lt = document.getElementById('leaflet_type');
+        if (nextLabel === 'F投函')    lt.value = 'F';
+        if (nextLabel === '修投函')  lt.value = '修';
+        if (nextLabel === 'その他投函') lt.value = 'その他';
+      }
+    }
+    else {
+      const prefMap = {
+        pr_status:      'pr_',
+        m_valve_state:  'm_',
+        m_valve_attach: 'm_attach_'
+      };
+      fileName = prefMap[field] + nextSuf + '.png';
+    }
+
+    el.querySelector('img').src = STATIC_ROOT + 'core/icons/assignment/' + fileName;
+    hiddenStatus.value = nextLabel;
+  }
+</script>
 {% endblock %}

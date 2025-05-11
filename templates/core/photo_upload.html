@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}写真アップロード{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">写真登録：{{ assignment.customer.usage_no }} – {{ assignment.customer.name }}</h2>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.photo_type|as_crispy_field }}
+    </div>
+    <div class="mb-3">
+      {{ form.image|as_crispy_field }}
+    </div>
+    <button type="submit" class="btn btn-primary">アップロード</button>
+    <a href="{% url 'core:assignment_detail' pk=project.pk assignment_pk=assignment.pk %}"
+       class="btn btn-secondary">キャンセル</a>
+  </form>
+</div>
+{% endblock %}
+

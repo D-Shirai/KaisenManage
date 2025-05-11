@@ -25,6 +25,10 @@ urlpatterns = [
          name='password_change_done'),
      path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
      path('projects/<int:pk>/complete/', views.project_complete, name='project_complete'),
-
-
+    path(
+        'project/<int:pk>/assignment/<int:assignment_pk>/photo_upload/',
+        views.photo_upload,
+        name='photo_upload'
+    ),
+        
 ]

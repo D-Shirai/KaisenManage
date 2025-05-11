@@ -134,10 +134,10 @@ class Assignment(models.Model):
         blank=True,
         help_text='プロジェクト内での通し番号（後ほど自動採番）'
     )
-    block_number    = models.CharField("丁番号", max_length=10, blank=True)
-    building_number = models.CharField("棟番号", max_length=10, blank=True)
-    meter_type      = models.CharField("メーター種別", max_length=10, blank=True)
-    meter_number    = models.CharField("メーター番号", max_length=20, blank=True)
+    block_number    = models.CharField("丁番号", max_length=100, blank=True)
+    building_number = models.CharField("棟番号", max_length=100, blank=True)
+    meter_type      = models.CharField("メーター種別", max_length=100, blank=True)
+    meter_number    = models.CharField("メーター番号", max_length=100, blank=True)
 
     PR_STATUS_CHOICES = [
         ('not_visited', '未訪問'),

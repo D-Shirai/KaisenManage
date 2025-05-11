@@ -176,24 +176,27 @@ def project_create_confirm(request):
 @login_required
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk, allowed_users=request.user)
+
+    # Excelインポートフォーム
     excel_form = CustomerExcelUploadForm(request.POST or None, request.FILES or None)
-    # Excelインポート
     if request.user.is_staff and request.method == 'POST' and 'excel_file' in request.FILES:
         if excel_form.is_valid():
             data = request.session.get('pending_project')
             if not data:
                 messages.error(request, 'セッションが期限切れです。')
                 return redirect('core:project_create')
-            fd = data.get('form_data', {})
+            fd      = data.get('form_data', {})
             allowed = data.get('allowed', [])
+            # プロジェクト新規作成
             project = Project.objects.create(
-                name=fd['name'],
-                order_no=fd['order_no'] or None,
-                district=request.user.district,
+                name     = fd['name'],
+                order_no = fd.get('order_no') or None,
+                district = request.user.district,
             )
             project.allowed_users.set(User.objects.filter(pk__in=allowed))
-            wb = load_workbook(request.FILES['excel_file'])
-            sheet = wb.active
+            # Excelから顧客・割当のインポート
+            wb      = load_workbook(request.FILES['excel_file'])
+            sheet   = wb.active
             headers = [cell.value for cell in sheet[1]]
             def idx(col):
                 if col not in headers:
@@ -201,6 +204,12 @@ def project_detail(request, pk):
                 return headers.index(col)
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 usage = str(row[idx('ご使用番号')] or '').strip()
+                if not usage:
+                    continue
+                # 14桁なら末尾1文字を切り捨て
+                if len(usage) == 14:
+                    usage = usage[:-1]
+                usage = usage[-4:].zfill(4)
                 name  = str(row[idx('お名前')] or '').strip()
                 tou   = str(row[idx('棟番号')] or '').strip()
                 chou  = str(row[idx('丁番号')] or '').strip()
@@ -209,23 +218,30 @@ def project_detail(request, pk):
                 if mnum.isdigit():
                     mnum = mnum.zfill(4)
                 cust, _ = Customer.objects.update_or_create(
-                    usage_no=usage,
-                    defaults={'name': name, 'room_number': tou or chou}
+                    usage_no      = usage,
+                    defaults = {
+                        'name':        name,
+                        'room_number': tou or chou,
+                    }
                 )
                 Assignment.objects.update_or_create(
-                    project=project,
-                    customer=cust,
-                    defaults={'meter_type': mtype, 'meter_number': mnum}
+                    project      = project,
+                    customer     = cust,
+                    defaults     = {
+                        'meter_type':   mtype,
+                        'meter_number': mnum,
+                    }
                 )
             request.session.pop('pending_project', None)
             messages.success(request, 'Excelから顧客をインポートしました。')
             return redirect('core:project_detail', pk=project.pk)
 
-    # 検索・フィルタ
-    room_q = request.GET.get('room', '').strip()
-    strip_tou = request.GET.get('strip_tou') == '1'
+    # 棟番号除去
     if request.method == 'POST' and 'strip_tou_apply' in request.POST:
-        to_strip = Assignment.objects.filter(project=project, customer__room_number__contains='-').select_related('customer')
+        to_strip = Assignment.objects.filter(
+            project=project,
+            customer__room_number__contains='-'
+        ).select_related('customer')
         for a in to_strip:
             parts = a.customer.room_number.split('-', 1)
             if len(parts) == 2:
@@ -234,44 +250,79 @@ def project_detail(request, pk):
         messages.success(request, '棟番号を除去しました。')
         return redirect('core:project_detail', pk=pk)
 
-    assignments = Assignment.objects.filter(project=project).select_related('customer')
-    if room_q:
-        # 条件に応じてregex or icontains
-        pass  # 既存ロジックをそのまま実装
+    # 検索・フィルタ
+    room_q    = request.GET.get('room', '').strip()
+    strip_tou = request.GET.get('strip_tou') == '1'
 
+    # 割当を「部屋番号昇順」で取得
+    assignments = (
+        Assignment.objects
+        .filter(project=project)
+        .select_related('customer')
+        .order_by('customer__room_number')
+    )
+
+    # 部屋番号フィルタ（既存ロジックを適用）
+    if room_q:
+        # ここにあなたの正規表現 or icontains による絞り込みロジックを入れてください
+        # 例: assignments = assignments.filter(customer__room_number__icontains=room_q)
+        pass
+
+    # フィルタ後も昇順を維持
+    assignments = assignments.order_by('customer__room_number')
+
+    # 一括更新フォーム
     bulk_form = BulkAssignmentForm(request.POST or None)
     if request.method == 'POST' and 'bulk_update' in request.POST and bulk_form.is_valid():
-        selected = request.POST.getlist('selected')
+        selected  = request.POST.getlist('selected')
         to_update = assignments.filter(pk__in=selected)
-        data = {}
-        for fld in ['pr_status','gauge_spec','absence_action','open_round','open_status','leaflet_type','leaflet_status','m_valve_state','m_valve_attach']:
+        data      = {}
+        for fld in [
+            'pr_status', 'gauge_spec', 'absence_action',
+            'open_round', 'open_status', 'leaflet_type',
+            'leaflet_status', 'm_valve_state', 'm_valve_attach',
+        ]:
             val = bulk_form.cleaned_data.get(fld)
-            if val not in (None, '', []): data[fld] = val
-        if data: to_update.update(**data)
+            if val not in (None, '', []):
+                data[fld] = val
+        if data:
+            to_update.update(**data)
         return redirect('core:project_detail', pk=pk)
 
     # 進捗サマリ
-    total = assignments.count()
-    done = assignments.filter(open_status='completed').count()
-    pct = int(done / total * 100) if total else 0
-    summary = {'total': total, 'done': done, 'not_done': total-done, 'pct': pct, 'not_pct': 100-pct}
+    total    = assignments.count()
+    done     = assignments.filter(open_status='completed').count()
+    pct      = int(done / total * 100) if total else 0
+    summary  = {
+        'total':   total,
+        'done':    done,
+        'not_done': total - done,
+        'pct':     pct,
+        'not_pct': 100 - pct,
+    }
 
     # PRサマリ
-    pr_counts = Counter(a.pr_status for a in assignments)
-    pr_summary = {label: pr_counts.get(code, 0) for code, label in Assignment.PR_STATUS_CHOICES}
+    pr_counts  = Counter(a.pr_status for a in assignments)
+    pr_summary = {
+        label: pr_counts.get(code, 0)
+        for code, label in Assignment.PR_STATUS_CHOICES
+    }
     pr_total = sum(pr_summary.values())
-    pr_pct = {label: int(cnt/pr_total*100) if pr_total else 0 for label, cnt in pr_summary.items()}
+    pr_pct   = {
+        label: int(count / pr_total * 100) if pr_total else 0
+        for label, count in pr_summary.items()
+    }
 
     context = {
-        'project': project,
+        'project':     project,
         'assignments': assignments,
-        'excel_form': excel_form,
-        'bulk_form': bulk_form,
-        'summary': summary,
-        'pr_summary': pr_summary,
-        'pr_pct': pr_pct,
-        'room_q': room_q,
-        'strip_tou': strip_tou,
+        'excel_form':  excel_form,
+        'bulk_form':   bulk_form,
+        'summary':     summary,
+        'pr_summary':  pr_summary,
+        'pr_pct':      pr_pct,
+        'room_q':      room_q,
+        'strip_tou':   strip_tou,
     }
     return render(request, 'core/project_detail.html', context)
 

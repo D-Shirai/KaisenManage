@@ -73,140 +73,173 @@
   </div>
 
   {# ─── モバイル版：アイコン→更新ボタン ───────────────── #}
-  <div class="mobile-only">
-    <form method="post" class="mb-4">
-      {% csrf_token %}
+<div class="mobile-only">
+  <form method="post" class="mb-4">
+    {% csrf_token %}
 
-      {# ヘッダー情報 #}
-      <div class="mb-3 text-center">
-        <div>部屋番号：{{ assignment.customer.room_number }}</div>
-        <div>メーター番号：{{ assignment.meter_number }}</div>
-        <div>メーター種別：{{ assignment.meter_type }}</div>
+    {# ヘッダー情報 #}
+    <div class="mb-3 text-center">
+      <div>部屋番号：{{ assignment.customer.room_number }}</div>
+      <div>メーター番号：{{ assignment.meter_number }}</div>
+      <div>メーター種別：{{ assignment.meter_type }}</div>
+    </div>
+
+    {# テーブル：ゲージ／不在時処置／用紙種別 #}
+    <table class="table table-sm text-center mb-3">
+      <thead>
+        <tr><th>ゲージ仕様</th><th>不在時処置</th><th>用紙種別</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ assignment.get_gauge_spec_display }}</td>
+          <td>{{ assignment.get_absence_action_display }}</td>
+          <td>{{ assignment.get_leaflet_type_display }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    {# ３列グリッド #}
+    <div class="status-grid">
+
+      {# PR状況 #}
+      <div class="status-item"
+           data-field="pr_status"
+           data-list="not_visited,home,absent"
+           data-suffix-list="not_visited,home,absent"
+           onclick="cycleStatus(this)">
+        <div class="group-title">PR状況</div>
+        {% if assignment.pr_status == 'not_visited' %}
+          <img src="{% static 'core/icons/assignment/pr_not_visited.png' %}" alt="未訪問">
+        {% elif assignment.pr_status == 'home' %}
+          <img src="{% static 'core/icons/assignment/pr_home.png' %}" alt="在宅">
+        {% else %}
+          <img src="{% static 'core/icons/assignment/pr_absent.png' %}" alt="不在">
+        {% endif %}
+        <input type="hidden" name="pr_status" id="pr_status" value="{{ assignment.pr_status }}">
       </div>
 
-      {# テーブル：ゲージ／不在時処置／用紙種別 #}
-      <table class="table table-sm text-center mb-3">
-        <thead>
-          <tr><th>ゲージ仕様</th><th>不在時処置</th><th>用紙種別</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ assignment.get_gauge_spec_display }}</td>
-            <td>{{ assignment.get_absence_action_display }}</td>
-            <td>{{ assignment.get_leaflet_type_display }}</td>
-          </tr>
-        </tbody>
-      </table>
+      {# M栓状況 #}
+      <div class="status-item"
+           data-field="m_valve_state"
+           data-list="open,closed"
+           data-suffix-list="open,closed"
+           onclick="cycleStatus(this)">
+        <div class="group-title">M栓状況</div>
+        {% if assignment.m_valve_state == 'open' %}
+          <img src="{% static 'core/icons/assignment/m_open.png' %}" alt="アキ">
+        {% else %}
+          <img src="{% static 'core/icons/assignment/m_closed.png' %}" alt="シマリ">
+        {% endif %}
+        <input type="hidden" name="m_valve_state" id="m_valve_state" value="{{ assignment.m_valve_state }}">
+      </div>
 
-      {# ３列グリッド #}
-      <div class="status-grid">
+      {# M取付外 #}
+      <div class="status-item"
+           data-field="m_valve_attach"
+           data-list="attached,detached"
+           data-suffix-list="attached,detached"
+           onclick="cycleStatus(this)">
+        <div class="group-title">M取付外</div>
+        {% if assignment.m_valve_attach == 'attached' %}
+          <img src="{% static 'core/icons/assignment/m_attach_attached.png' %}" alt="取付">
+        {% else %}
+          <img src="{% static 'core/icons/assignment/m_attach_detached.png' %}" alt="取外">
+        {% endif %}
+        <input type="hidden" name="m_valve_attach" id="m_valve_attach" value="{{ assignment.m_valve_attach }}">
+      </div>
 
-        {# PR状況 #}
-        <div class="status-item"
-             data-field="pr_status"
-             data-list="未訪問,在宅,不在"
-             data-suffix-list="not_visited,home,absent"
-             onclick="cycleStatus(this)">
-          <div class="group-title">PR状況</div>
-          {% if assignment.pr_status == '未訪問' %}
-            <img src="{% static 'core/icons/assignment/pr_not_visited.png' %}" alt="未訪問">
-          {% elif assignment.pr_status == '在宅' %}
-            <img src="{% static 'core/icons/assignment/pr_home.png' %}" alt="在宅">
-          {% else %}
-            <img src="{% static 'core/icons/assignment/pr_absent.png' %}" alt="不在">
-          {% endif %}
-          <input type="hidden" name="pr_status" id="pr_status" value="{{ assignment.pr_status }}">
-        </div>
+    {# 開栓状況 ＆ 巡目入力 #}
+    <div class="status-item"
+        data-field="open_status"
+        data-list="未訪問,作業中,完了,未実施"
+        data-suffix-list="not_visited,in_progress,completed,not_done"
+        onclick="cycleStatus(this)">
+      <div class="group-title">開栓状況</div>
+      {% if assignment.open_status == '未訪問' %}
+        <img src="{% static 'core/icons/assignment/open_not_visited.png' %}" alt="未訪問">
+      {% elif assignment.open_status == '作業中' %}
+        <img src="{% static 'core/icons/assignment/open_in_progress.png' %}" alt="作業中">
+      {% elif assignment.open_status == '完了' %}
+        <img src="{% static 'core/icons/assignment/open_completed.png' %}" alt="完了">
+      {% else %}
+        <img src="{% static 'core/icons/assignment/open_not_done.png' %}" alt="未実施">
+      {% endif %}
 
-        {# M栓状況 #}
-        <div class="status-item"
-             data-field="m_valve_state"
-             data-list="アキ,シマリ"
-             data-suffix-list="open,closed"
-             onclick="cycleStatus(this)">
-          <div class="group-title">M栓状況</div>
-          {% if assignment.m_valve_state == 'アキ' %}
-            <img src="{% static 'core/icons/assignment/m_open.png' %}" alt="アキ">
-          {% else %}
-            <img src="{% static 'core/icons/assignment/m_closed.png' %}" alt="シマリ">
-          {% endif %}
-          <input type="hidden" name="m_valve_state" id="m_valve_state" value="{{ assignment.m_valve_state }}">
-        </div>
+      <input type="hidden" name="open_status" id="open_status" value="{{ assignment.open_status }}">
 
-        {# M取付外 #}
-        <div class="status-item"
-             data-field="m_valve_attach"
-             data-list="取付,取外"
-             data-suffix-list="attached,detached"
-             onclick="cycleStatus(this)">
-          <div class="group-title">M取付外</div>
-          {% if assignment.m_valve_attach == '取付' %}
-            <img src="{% static 'core/icons/assignment/m_attach_attached.png' %}" alt="取付">
-          {% else %}
-            <img src="{% static 'core/icons/assignment/m_attach_detached.png' %}" alt="取外">
-          {% endif %}
-          <input type="hidden" name="m_valve_attach" id="m_valve_attach" value="{{ assignment.m_valve_attach }}">
-        </div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:0.25rem;">
+        <input
+          type="number"
+          name="open_round"
+          id="open_round"
+          placeholder="-"
+          style="width:3rem;"
+          {% if assignment.open_status != '未訪問' %}
+            value="{{ assignment.open_round }}" required
+          {% endif %}>
+        <span>巡目</span>
+      </div>
+    </div>
 
-        {# 開栓状況 & 巡目入力をセット #}
-        <div class="status-item"
-             data-field="open_status"
-             data-list="未訪問,作業中,完了,未実施"
-             data-suffix-list="not_visited,in_progress,completed,not_done"
-             onclick="cycleStatus(this)">
-          <div class="group-title">開栓状況</div>
-          {% if assignment.open_status == '未訪問' %}
-            <img src="{% static 'core/icons/assignment/open_not_visited.png' %}" alt="未訪問">
-          {% elif assignment.open_status == '作業中' %}
-            <img src="{% static 'core/icons/assignment/open_in_progress.png' %}" alt="作業中">
-          {% elif assignment.open_status == '完了' %}
-            <img src="{% static 'core/icons/assignment/open_completed.png' %}" alt="開栓完了">
-          {% else %}
-            <img src="{% static 'core/icons/assignment/open_not_done.png' %}" alt="開栓未実施">
-          {% endif %}
-          <input type="hidden" name="open_status" id="open_status" value="{{ assignment.open_status }}">
-          <input
-            type="number"
-            name="open_round"
-            id="open_round"
-            placeholder="-"
-            {% if assignment.open_status != '未訪問' %} value="{{ assignment.open_round }}" required {% endif %}
-          >
-        </div>
 
-        {# 投函ステータス #}
-        <div class="status-item"
-             data-field="leaflet_status"
-             data-list="未投函,投函なし,F投函,修投函,その他投函"
-             data-suffix-list="not_posted,none,f_posted,shu_posted,other_posted"
-             data-type="{{ assignment.leaflet_type }}"
-             onclick="cycleStatus(this)">
-          <div class="group-title">不在用紙</div>
-          {% if not assignment.leaflet_type or assignment.leaflet_type == '不要' %}
-            <img src="{% static 'core/icons/assignment/paper_none.png' %}" alt="投函なし">
-            <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="">
-            <input type="hidden" name="leaflet_status" id="leaflet_status" value="投函なし">
-          {% else %}
-            <img src="{% static 'core/icons/assignment/paper_not_posted.png' %}" alt="未投函">
-            <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
-            <input type="hidden" name="leaflet_status" id="leaflet_status" value="未投函">
-          {% endif %}
-        </div>
+    {# 投函ステータス #}
+    <div class="status-item"
+        data-field="leaflet_status"
+        data-list="none,not_posted,f_posted,shu_posted,other_posted"
+        data-suffix-list="none,not_posted,f_posted,shu_posted,other_posted"
+        onclick="cycleStatus(this)">
+      <div class="group-title">不在用紙</div>
 
-        {# 写真登録リンク #}
-        <div class="status-item">
-          <div class="group-title">写真登録</div>
-          <a href="{% url 'core:photo_upload' pk=project.pk assignment_pk=assignment.pk %}">
-            <img src="{% static 'core/icons/assignment/photo_plus.png' %}" alt="写真登録">
-          </a>
-        </div>
-      </div><!-- /.status-grid -->
+      {# ① 用紙種別が空（不要）の場合 → 投函なし #}
+      {% if assignment.leaflet_type == "" %}
+        <img src="{% static 'core/icons/assignment/paper_none.png' %}" alt="投函なし">
+        <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="">
+        <input type="hidden" name="leaflet_status" id="leaflet_status" value="none">
 
-      <button type="submit" class="btn btn-primary w-100 mb-2">更新</button>
-      <a href="{% url 'core:project_detail' project.pk %}"
-         class="btn btn-secondary w-100">キャンセル</a>
-    </form>
-  </div>
+      {# ② ステータスが F投函 #}
+      {% elif assignment.leaflet_status == 'f_posted' %}
+        <img src="{% static 'core/icons/assignment/paper_f_posted.png' %}" alt="F投函">
+        <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
+        <input type="hidden" name="leaflet_status" id="leaflet_status" value="f_posted">
+
+      {# ③ ステータスが 修投函 #}
+      {% elif assignment.leaflet_status == 'shu_posted' %}
+        <img src="{% static 'core/icons/assignment/paper_shu_posted.png' %}" alt="修投函">
+        <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
+        <input type="hidden" name="leaflet_status" id="leaflet_status" value="shu_posted">
+
+      {# ④ ステータスが その他投函 #}
+      {% elif assignment.leaflet_status == 'other_posted' %}
+        <img src="{% static 'core/icons/assignment/paper_other_posted.png' %}" alt="その他投函">
+        <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
+        <input type="hidden" name="leaflet_status" id="leaflet_status" value="other_posted">
+
+      {# ⑤ それ以外（用紙種別あり but 未投函）→ 未投函 #}
+      {% else %}
+        <img src="{% static 'core/icons/assignment/paper_not_posted.png' %}" alt="未投函">
+        <input type="hidden" name="leaflet_type"   id="leaflet_type"   value="{{ assignment.leaflet_type }}">
+        <input type="hidden" name="leaflet_status" id="leaflet_status" value="not_posted">
+      {% endif %}
+    </div>
+
+
+
+      {# 写真登録リンク #}
+      <div class="status-item">
+        <div class="group-title">写真登録</div>
+        <a href="{% url 'core:photo_upload' pk=project.pk assignment_pk=assignment.pk %}">
+          <img src="{% static 'core/icons/assignment/photo_plus.png' %}" alt="写真登録">
+        </a>
+      </div>
+
+    </div><!-- /.status-grid -->
+
+    <button type="submit" class="btn btn-primary w-100 mb-2">更新</button>
+    <a href="{% url 'core:project_detail' project.pk %}" class="btn btn-secondary w-100">キャンセル</a>
+  </form>
+</div>
+
+
 
   {# ─── PC版：写真アップロード／プレビュー ───────────────── #}
   <div class="desktop-only">

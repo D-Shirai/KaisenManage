@@ -1,24 +1,234 @@
 {% extends "base.html" %}
-{% load static crispy_forms_tags %}
+{% load static %}
 
-{% block title %}写真アップロード{% endblock %}
+{% block extra_css %}
+<style>
+  .photo-grid {
+    display: grid;
+    /* 3列に変更 */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+  .photo-item, .other-item {
+    text-align: center;
+    padding-top: 1rem;
+  }
+  .photo-label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  .photo-item img,
+  .other-item img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .delete-btn {
+    display: block;
+    width: auto;
+    margin: 0.5rem auto 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: box-shadow 0.2s;
+  }
+  .delete-btn:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  #add-other {
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: box-shadow 0.2s;
+  }
+  #add-other:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  /* プログレス表示 */
+  #upload-progress {
+    display: none;
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+  #upload-progress .spinner-border {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  #upload-progress progress {
+    width: 80%;
+    height: 1rem;
+    margin-top: 0.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-  <h2 class="mb-4">写真登録：{{ assignment.customer.usage_no }} – {{ assignment.customer.name }}</h2>
+<div class="container my-4">
+  <h2 class="mb-4">
+    写真登録：{{ assignment.customer.usage_no }} – {{ assignment.customer.name }}
+  </h2>
 
-  <form method="post" enctype="multipart/form-data">
+  <form id="upload-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="mb-3">
-      {{ form.photo_type|as_crispy_field }}
+    <div class="photo-grid">
+      {% for slot in photo_slots %}
+        <div class="photo-item" data-type="{{ slot.type }}">
+          <div class="photo-label">{{ slot.label }}</div>
+          <input
+            type="file"
+            id="photo_{{ slot.type }}"
+            name="photo_{{ slot.type }}"
+            accept="image/*"
+            capture="environment"
+          >
+          <label for="photo_{{ slot.type }}" style="cursor:pointer;">
+            <img
+              src="{% if slot.photo %}{{ slot.photo.image.url }}{% else %}{% static 'core/images/photo_icon.png' %}{% endif %}"
+              alt="{{ slot.label }}"
+            >
+          </label>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm delete-btn"
+            onclick="deletePhoto('{{ slot.type }}')"
+          >削除</button>
+        </div>
+      {% endfor %}
     </div>
-    <div class="mb-3">
-      {{ form.image|as_crispy_field }}
+
+    <div id="upload-progress">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div>
+        <progress id="progress-bar" max="100" value="0"></progress>
+      </div>
+      <div class="mt-2">アップロード中…しばらくお待ちください</div>
     </div>
-    <button type="submit" class="btn btn-primary">アップロード</button>
-    <a href="{% url 'core:assignment_detail' pk=project.pk assignment_pk=assignment.pk %}"
-       class="btn btn-secondary">キャンセル</a>
+
+    <div class="text-center mb-3">
+      <button
+        type="button"
+        id="add-other"
+        class="btn btn-outline-secondary"
+      >
+        ＋ その他の写真を追加
+      </button>
+    </div>
+
+    <div class="text-center">
+      <button
+        type="submit"
+        id="submit-btn"
+        class="btn btn-primary"
+      >
+        アップロードを送信
+      </button>
+    </div>
   </form>
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form       = document.getElementById('upload-form');
+  const submitBtn  = document.getElementById('submit-btn');
+  const progressEl = document.getElementById('upload-progress');
+  const progressBar= document.getElementById('progress-bar');
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+
+    // ボタン無効化
+    submitBtn.disabled = true;
+    submitBtn.innerText = '送信中…';
+
+    // プログレス表示
+    progressEl.style.display = 'block';
+
+    // FormData 生成
+    const fd = new FormData(form);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action, true);
+
+    // CSRF
+    const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+    // 進捗イベント
+    xhr.upload.addEventListener('progress', ev => {
+      if (ev.lengthComputable) {
+        progressBar.value = Math.round(ev.loaded / ev.total * 100);
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        window.location.href = xhr.responseURL || window.location.href;
+      } else {
+        alert('アップロードに失敗しました。');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'アップロードを送信';
+        progressEl.style.display = 'none';
+      }
+    };
+
+    xhr.onerror = () => {
+      alert('通信エラーが発生しました。');
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'アップロードを送信';
+      progressEl.style.display = 'none';
+    };
+
+    xhr.send(fd);
+  });
+
+  // 削除用
+  window.deletePhoto = type => {
+    const delForm = document.createElement('form');
+    delForm.method = 'post';
+    delForm.style.display = 'none';
+    delForm.innerHTML = `
+      <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+      <input type="hidden" name="delete_photo" value="${type}">
+    `;
+    document.body.appendChild(delForm);
+    delForm.submit();
+  };
+
+  // プレビュー＆追加枠
+  function initItem(el) {
+    const input = el.querySelector('input[type="file"]');
+    const img   = el.querySelector('img');
+    el.querySelector('label').addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => img.src = e.target.result;
+      reader.readAsDataURL(file);
+    });
+  }
+  document.querySelectorAll('.photo-item').forEach(initItem);
+
+  document.getElementById('add-other').addEventListener('click', () => {
+    const tpl = document.createElement('div');
+    tpl.className = 'other-item';
+    tpl.innerHTML = `
+      <div class="photo-label">その他</div>
+      <input type="file" name="other_photos" accept="image/*" capture="environment">
+      <label style="cursor:pointer;"><img src="{% static 'core/images/photo_icon.png' %}"></label>
+      <input type="text" name="other_titles" class="form-control mt-2" placeholder="タイトル">
+      <button type="button" class="btn btn-danger btn-sm delete-btn">削除</button>
+    `;
+    document.querySelector('.photo-grid').appendChild(tpl);
+    initItem(tpl);
+    tpl.querySelector('.delete-btn').addEventListener('click', () => tpl.remove());
+  });
+});
+</script>
+{% endblock %}

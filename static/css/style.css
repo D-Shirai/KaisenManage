@@ -124,3 +124,22 @@ table td {
   text-align: center !important;
 }
 
+/* ─── ボタンにドロップシャドウを追加 ───────────────────────────────── */
+.btn {
+  /* X方向 0px, Y方向 2px, ぼかし 4px, 色 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* ホバー時は影を強めて “押せる” 感触を演出 */
+.btn:hover,
+.btn:focus {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 必要に応じて outline も消す */
+.btn:focus {
+  outline: none;
+}
+
+/* ────────────────────────────────────────────────────────────── */

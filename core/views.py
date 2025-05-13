@@ -529,23 +529,52 @@ def password_change_done(request):
 
 @login_required
 def photo_upload(request, pk, assignment_pk):
-    # 権限チェック付きで取得
     project    = get_object_or_404(Project, pk=pk, allowed_users=request.user)
     assignment = get_object_or_404(Assignment, pk=assignment_pk, project=project)
 
+    # POSTならアップロード／削除処理
     if request.method == 'POST':
-        form = PhotoForm(request.POST, request.FILES)
-        if form.is_valid():
-            photo = form.save(commit=False)
-            photo.assignment = assignment
-            photo.save()
-            # アップロード後は詳細画面へ戻る
-            return redirect('core:assignment_detail', pk=pk, assignment_pk=assignment_pk)
-    else:
-        form = PhotoForm()
+        # ① 削除ボタン
+        if 'delete_photo' in request.POST:
+            Photo.objects.filter(
+                assignment=assignment,
+                photo_type=request.POST['delete_photo']
+            ).delete()
+        # ② 各固定項目 (photo_<type>) のアップロード
+        for field_name, uploaded in request.FILES.items():
+            if field_name.startswith('photo_'):
+                ptype = field_name[len('photo_'):]
+                # 上書きするため既存を削除
+                Photo.objects.filter(
+                    assignment=assignment, photo_type=ptype
+                ).delete()
+                Photo.objects.create(
+                    assignment=assignment,
+                    photo_type=ptype,
+                    image=uploaded
+                )
+        # ③ 「その他」の複数アップロード
+        other_files  = request.FILES.getlist('other_photos')
+        other_titles = request.POST.getlist('other_titles')
+        for file_obj, title in zip(other_files, other_titles):
+            if file_obj:
+                Photo.objects.create(
+                    assignment=assignment,
+                    photo_type='other',
+                    image=file_obj,
+                    title=title
+                )
 
+        # 終わったら同じページへリダイレクト
+        return redirect('core:photo_upload', pk=pk, assignment_pk=assignment_pk)
+
+    # GETならスロット情報だけ準備して描画
+    photo_slots = [
+        {'type': t, 'label': l, 'photo': assignment.photos.filter(photo_type=t).first()}
+        for t, l in Photo.PHOTO_TYPE_CHOICES
+    ]
     return render(request, 'core/photo_upload.html', {
-        'form': form,
-        'project': project,
-        'assignment': assignment,
+        'project':      project,
+        'assignment':   assignment,
+        'photo_slots':  photo_slots,
     })

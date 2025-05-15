@@ -225,7 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progress-bar');
   const csrfToken   = document.querySelector('input[name=csrfmiddlewaretoken]').value;
 
-  // XHR送信はそのまま
+  // モバイル判定 (画面幅 or ユーザーエージェント等で調整可)
+  const isMobile = window.matchMedia('(max-width:767px)').matches;
+
   form.addEventListener('submit', e => {
     e.preventDefault();
     submitBtn.disabled = true;
@@ -242,7 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.value = Math.round(ev.loaded / ev.total * 100);
       }
     });
-    xhr.onload  = () => {
+
+    xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         window.location.href = xhr.responseURL || window.location.href;
       } else {
@@ -252,16 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
         progressEl.style.display = 'none';
       }
     };
+
     xhr.onerror = () => {
       alert('通信エラーが発生しました。');
       submitBtn.disabled = false;
       submitBtn.innerText = 'アップロードを送信';
       progressEl.style.display = 'none';
     };
+
     xhr.send(fd);
   });
 
-  // 削除フォームもそのまま
   window.deletePhoto = type => {
     const delForm = document.createElement('form');
     delForm.method = 'post';
@@ -274,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
     delForm.submit();
   };
 
-  // ファイル選択後すぐに送信する initItem
   function initItem(el) {
     const input = el.querySelector('input[type="file"]');
     const img   = el.querySelector('img');
@@ -286,20 +289,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const file = input.files[0];
       if (!file) return;
 
-      // プレビュー
-      const url = URL.createObjectURL(file);
-      img.src = url;
+      // ① 画像プレビューの更新
+      const reader = new FileReader();
+      reader.onload = e => img.src = e.target.result;
+      reader.readAsDataURL(file);
 
-      // 撮影後すぐに送信
-      if (typeof form.requestSubmit === 'function') {
-        form.requestSubmit();
-      } else {
-        form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+      // ② モバイルの場合のみ自動送信
+      if (isMobile) {
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+        }
       }
     });
   }
 
-  document.querySelectorAll('.photo-item').forEach(initItem);
+  document.querySelectorAll('.photo-item, .other-item').forEach(initItem);
 
   document.getElementById('add-other').addEventListener('click', () => {
     const tpl = document.createElement('div');
